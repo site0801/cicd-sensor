@@ -1,0 +1,116 @@
+---
+name: Release Rules
+
+"on":
+  push:
+    tags:
+      - "rules/v*"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-baseline-rules-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  LAYER_MEDIA_TYPE: application/vnd.cicd-sensor.baseline.rules.v1+yaml+gzip
+  GHCR_REPOSITORY: ghcr.io/cicd-sensor/cicd-sensor-rules
+  QUAY_REPOSITORY: quay.io/cicd-sensor/cicd-sensor-rules
+  GITLAB_REPOSITORY: registry.gitlab.com/cicd-sensor/cicd-sensor-rules
+
+jobs:
+  publish:
+    name: Publish rules artifact
+    runs-on: ubuntu-24.04
+    environment: rules-releases
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Resolve rules version
+        id: rules
+        env:
+          REF_TAG: ${{ github.ref_name }}
+        run: |
+          version="${REF_TAG#rules/}"
+          if [[ ! "$version" =~ ^v[0-9]{8}-[0-9]{3}$ ]]; then
+            echo "::error::rules version must match rules/vYYYYMMDD-NNN, got '${REF_TAG}'"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Setup ORAS
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+
+      - name: Build rules bundle
+        run: |
+          make rules-bundle-validate RULE_BUNDLE="${RUNNER_TEMP}/baseline-rules.yaml"
+          gzip -n -c "${RUNNER_TEMP}/baseline-rules.yaml" > "${RUNNER_TEMP}/baseline-rules.yaml.gz"
+          printf '{}' > "${RUNNER_TEMP}/config.json"
+
+      - name: Verify registry credentials
+        env:
+          QUAY_USERNAME: ${{ vars.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+          GITLAB_USERNAME: ${{ vars.GITLAB_USERNAME }}
+          GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
+        run: |
+          test -n "$QUAY_USERNAME" || { echo "::error::QUAY_USERNAME environment variable is not configured"; exit 1; }
+          test -n "$QUAY_PASSWORD" || { echo "::error::QUAY_PASSWORD environment secret is not configured"; exit 1; }
+          test -n "$GITLAB_USERNAME" || { echo "::error::GITLAB_USERNAME environment variable is not configured"; exit 1; }
+          test -n "$GITLAB_PASSWORD" || { echo "::error::GITLAB_PASSWORD environment secret is not configured"; exit 1; }
+
+      - name: Login to registries
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QUAY_USERNAME: ${{ vars.QUAY_USERNAME }}
+          QUAY_PASSWORD: ${{ secrets.QUAY_PASSWORD }}
+          GITLAB_USERNAME: ${{ vars.GITLAB_USERNAME }}
+          GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" |
+            oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          printf '%s' "$QUAY_PASSWORD" |
+            oras login quay.io --username "$QUAY_USERNAME" --password-stdin
+          printf '%s' "$GITLAB_PASSWORD" |
+            oras login registry.gitlab.com --username "$GITLAB_USERNAME" --password-stdin
+
+      - name: Push versioned rules artifact
+        env:
+          RULES_VERSION: ${{ steps.rules.outputs.version }}
+        run: |
+          cd "$RUNNER_TEMP"
+          for repo in "$GHCR_REPOSITORY" "$QUAY_REPOSITORY"; do
+            oras push "${repo}:${RULES_VERSION}" \
+              --artifact-type "application/vnd.cicd-sensor.baseline.rules.config.v1+json" \
+              --annotation "org.opencontainers.image.version=${RULES_VERSION}" \
+              "baseline-rules.yaml.gz:${LAYER_MEDIA_TYPE}"
+          done
+          oras push "${GITLAB_REPOSITORY}:${RULES_VERSION}" \
+            --annotation "org.opencontainers.image.version=${RULES_VERSION}" \
+            --config "config.json:application/vnd.oci.image.config.v1+json" \
+            "baseline-rules.yaml.gz:${LAYER_MEDIA_TYPE}"
+
+      - name: Validate pushed rules artifacts
+        env:
+          RULES_VERSION: ${{ steps.rules.outputs.version }}
+        run: |
+          for repo in "$GHCR_REPOSITORY" "$QUAY_REPOSITORY" "$GITLAB_REPOSITORY"; do
+            make validate-rules-artifact RULE_ARTIFACT_REF="${repo}:${RULES_VERSION}"
+          done
+
+      - name: Promote rules artifact to v1
+        env:
+          RULES_VERSION: ${{ steps.rules.outputs.version }}
+        run: |
+          for repo in "$GHCR_REPOSITORY" "$QUAY_REPOSITORY" "$GITLAB_REPOSITORY"; do
+            oras copy "${repo}:${RULES_VERSION}" "${repo}:v1"
+          done

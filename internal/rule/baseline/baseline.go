@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	GitHubOCIRef = "ghcr.io/rung/rules:v1"
-	GitLabOCIRef = "registry.gitlab.com/rung/oci-testing/rules:v1"
+	GitHubOCIRef = "ghcr.io/cicd-sensor/cicd-sensor-rules:v1"
+	GitLabOCIRef = "registry.gitlab.com/cicd-sensor/cicd-sensor-rules:v1"
 	QuayOCIRef   = "quay.io/cicd-sensor/cicd-sensor-rules:v1"
 
 	ociVersionAnnotation = "org.opencontainers.image.version"

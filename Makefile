@@ -10,6 +10,8 @@ export GOCACHE ?= $(CURDIR)/.gocache
 BIN_DIR := bin
 DIST_DIR := dist
 RULE_BUNDLE ?= $(DIST_DIR)/baseline-rules.yaml
+RULE_ARTIFACT_REF ?=
+RULE_ARTIFACT_DIR ?= $(DIST_DIR)/rules-artifact
 INTEGRATION_TEST_BIN ?= /tmp/cicd-sensor-kerneltracker-it.test
 
 LINUX_BINS := cicd-sensor cicd-sensor-manager cicd-sensorctl
@@ -27,6 +29,7 @@ help:
 	@printf '  %-24s %s\n' 'make build-local-ctl' 'build cicd-sensorctl for the local host into ./bin'
 	@printf '  %-24s %s\n' 'make bench-cel' 'run CEL evaluation benchmark once'
 	@printf '  %-24s %s\n' 'make rules-bundle' 'bundle rules/ into $(RULE_BUNDLE)'
+	@printf '  %-24s %s\n' 'make validate-rules-artifact' 'pull and validate an OCI rules artifact'
 	@printf '  %-24s %s\n' 'make test-integration' 'run privileged Linux integration tests'
 	@printf '  %-24s %s\n' 'make clean' 'remove local build outputs'
 
@@ -102,6 +105,16 @@ rules-bundle:
 .PHONY: rules-bundle-validate
 rules-bundle-validate: rules-bundle
 	$(GO) run ./cmd/cicd-sensorctl rule validate $(RULE_BUNDLE)
+
+.PHONY: validate-rules-artifact
+validate-rules-artifact:
+	@test -n "$(RULE_ARTIFACT_REF)" || { echo "RULE_ARTIFACT_REF is required"; exit 1; }
+	rm -rf $(RULE_ARTIFACT_DIR)
+	mkdir -p $(RULE_ARTIFACT_DIR)
+	oras pull -o $(RULE_ARTIFACT_DIR) $(RULE_ARTIFACT_REF)
+	test -f $(RULE_ARTIFACT_DIR)/baseline-rules.yaml.gz
+	gzip -dc $(RULE_ARTIFACT_DIR)/baseline-rules.yaml.gz > $(RULE_ARTIFACT_DIR)/baseline-rules.yaml
+	$(GO) run ./cmd/cicd-sensorctl rule validate $(RULE_ARTIFACT_DIR)/baseline-rules.yaml
 
 .PHONY: diff-check
 diff-check:
