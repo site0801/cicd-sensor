@@ -23,11 +23,7 @@ func handleStageCgroupBasename(state *jobTrackingState, command commandStageCgro
 		}}
 	}
 
-	return []engineEffect{stageCgroupBasename{
-		Basename: command.Basename,
-		JobID:    command.JobID,
-		Reply:    command.Reply,
-	}}
+	return []engineEffect{stageCgroupBasename(command)}
 }
 
 // handleRegisterJob registers (or refreshes) Job state and allocates the
@@ -71,11 +67,7 @@ func handleBindCgroup(state *jobTrackingState, command commandBindCgroup) []engi
 			},
 		}
 	}
-	return []engineEffect{bindTrackedCgroup{
-		JobID:    command.JobID,
-		CgroupID: command.CgroupID,
-		Reply:    command.Reply,
-	}}
+	return []engineEffect{bindTrackedCgroup(command)}
 }
 
 func handleRemoveJob(state *jobTrackingState, command commandRemoveJob) []engineEffect {

@@ -38,8 +38,6 @@ func (noopKernelIO) Close() error {
 }
 
 type recordingKernelIO struct {
-	noopKernelIO
-
 	startErr         error
 	putTrackedErr    error
 	deleteTrackedErr error

@@ -11,7 +11,14 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/kerneltracker"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/managerclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
 )
+
+type staticManagerFetcher struct{}
+
+func (staticManagerFetcher) FetchConfig(context.Context, *managerv1.FetchConfigRequest) (*managerclient.FetchResult, error) {
+	return &managerclient.FetchResult{}, nil
+}
 
 // startPeerPIDAuthRegistry boots a JobRegistry + KernelTracker pair and tears
 // down both at sub-test exit. Each peer-PID auth case needs a fresh

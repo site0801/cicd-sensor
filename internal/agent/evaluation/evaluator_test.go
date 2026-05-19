@@ -45,17 +45,17 @@ func (r *recordingEvaluationBatches) sendBatch(_ context.Context, batch managerc
 	return nil
 }
 
-func (r *recordingEvaluationBatches) detectionEntries(t *testing.T) []logv1.JobDetectionLogEntry {
+func (r *recordingEvaluationBatches) detectionEntries(t *testing.T) []*logv1.JobDetectionLogEntry {
 	t.Helper()
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	records := r.records[managerv1.LogKind_LOG_KIND_JOB_DETECTION]
-	out := make([]logv1.JobDetectionLogEntry, 0, len(records))
+	out := make([]*logv1.JobDetectionLogEntry, 0, len(records))
 	for _, record := range records {
-		var entry logv1.JobDetectionLogEntry
-		if err := protojson.Unmarshal(record, &entry); err != nil {
+		entry := &logv1.JobDetectionLogEntry{}
+		if err := protojson.Unmarshal(record, entry); err != nil {
 			t.Fatalf("unmarshal detection log record: %v", err)
 		}
 		out = append(out, entry)
@@ -63,17 +63,17 @@ func (r *recordingEvaluationBatches) detectionEntries(t *testing.T) []logv1.JobD
 	return out
 }
 
-func (r *recordingEvaluationBatches) runtimeTelemetryEntries(t *testing.T) []logv1.JobRuntimeTelemetryLogEntry {
+func (r *recordingEvaluationBatches) runtimeTelemetryEntries(t *testing.T) []*logv1.JobRuntimeTelemetryLogEntry {
 	t.Helper()
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	records := r.records[managerv1.LogKind_LOG_KIND_JOB_RUNTIME_TELEMETRY]
-	out := make([]logv1.JobRuntimeTelemetryLogEntry, 0, len(records))
+	out := make([]*logv1.JobRuntimeTelemetryLogEntry, 0, len(records))
 	for _, record := range records {
-		var entry logv1.JobRuntimeTelemetryLogEntry
-		if err := protojson.Unmarshal(record, &entry); err != nil {
+		entry := &logv1.JobRuntimeTelemetryLogEntry{}
+		if err := protojson.Unmarshal(record, entry); err != nil {
 			t.Fatalf("unmarshal runtime telemetry log record: %v", err)
 		}
 		out = append(out, entry)

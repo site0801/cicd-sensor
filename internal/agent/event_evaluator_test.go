@@ -28,16 +28,16 @@ type recordingDetectionOutput struct {
 	payload [][]byte
 }
 
-func (s *recordingDetectionOutput) Entries(t *testing.T) []logv1.JobDetectionLogEntry {
+func (s *recordingDetectionOutput) Entries(t *testing.T) []*logv1.JobDetectionLogEntry {
 	t.Helper()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	out := make([]logv1.JobDetectionLogEntry, 0, len(s.payload))
+	out := make([]*logv1.JobDetectionLogEntry, 0, len(s.payload))
 	for _, payload := range s.payload {
-		var entry logv1.JobDetectionLogEntry
-		if err := protojson.Unmarshal(payload, &entry); err != nil {
+		entry := &logv1.JobDetectionLogEntry{}
+		if err := protojson.Unmarshal(payload, entry); err != nil {
 			t.Fatalf("unmarshal detection entry: %v", err)
 		}
 		out = append(out, entry)

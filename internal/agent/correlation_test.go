@@ -217,7 +217,7 @@ func TestEvaluateEvent_Correlations_EmitsDetectionLog(t *testing.T) {
 	if len(entries) != 3 {
 		t.Fatalf("detection entries: got %d, want 3", len(entries))
 	}
-	corrIdx := slices.IndexFunc(entries, func(entry logv1.JobDetectionLogEntry) bool {
+	corrIdx := slices.IndexFunc(entries, func(entry *logv1.JobDetectionLogEntry) bool {
 		return detectionRuleRef(entry) == "host-set/corr"
 	})
 	if corrIdx < 0 {
@@ -228,7 +228,7 @@ func TestEvaluateEvent_Correlations_EmitsDetectionLog(t *testing.T) {
 	}
 }
 
-func detectionRuleIDs(entries []logv1.JobDetectionLogEntry) []string {
+func detectionRuleIDs(entries []*logv1.JobDetectionLogEntry) []string {
 	ruleIDs := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		ruleIDs = append(ruleIDs, detectionRuleRef(entry))
@@ -236,7 +236,7 @@ func detectionRuleIDs(entries []logv1.JobDetectionLogEntry) []string {
 	return ruleIDs
 }
 
-func detectionRuleIDCount(entries []logv1.JobDetectionLogEntry, ruleID string) int {
+func detectionRuleIDCount(entries []*logv1.JobDetectionLogEntry, ruleID string) int {
 	count := 0
 	for _, entry := range entries {
 		if detectionRuleRef(entry) == ruleID {
@@ -250,7 +250,7 @@ func summaryRuleRef(hit observations.HitSummary) string {
 	return hit.RulesetID + "/" + hit.RuleID
 }
 
-func detectionRuleRef(entry logv1.JobDetectionLogEntry) string {
+func detectionRuleRef(entry *logv1.JobDetectionLogEntry) string {
 	return entry.GetRulesetId() + "/" + entry.GetRuleId()
 }
 
@@ -484,8 +484,4 @@ func newProjectScopeWithRules(setIdentity string, rules []rule.Rule) *jobscope.J
 	}}
 	scope.ResolveRules(jobcontext.JobIdentity{})
 	return scope
-}
-
-func boolPtr(value bool) *bool {
-	return &value
 }

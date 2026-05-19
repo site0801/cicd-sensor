@@ -15,16 +15,16 @@ type recordingRuntimeTelemetryOutput struct {
 	payload [][]byte
 }
 
-func (s *recordingRuntimeTelemetryOutput) Entries(t *testing.T) []logv1.JobRuntimeTelemetryLogEntry {
+func (s *recordingRuntimeTelemetryOutput) Entries(t *testing.T) []*logv1.JobRuntimeTelemetryLogEntry {
 	t.Helper()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	out := make([]logv1.JobRuntimeTelemetryLogEntry, 0, len(s.payload))
+	out := make([]*logv1.JobRuntimeTelemetryLogEntry, 0, len(s.payload))
 	for _, payload := range s.payload {
-		var entry logv1.JobRuntimeTelemetryLogEntry
-		if err := protojson.Unmarshal(payload, &entry); err != nil {
+		entry := &logv1.JobRuntimeTelemetryLogEntry{}
+		if err := protojson.Unmarshal(payload, entry); err != nil {
 			t.Fatalf("unmarshal runtime telemetry entry: %v", err)
 		}
 		out = append(out, entry)

@@ -49,17 +49,17 @@ func (r *recordingJobScopeBatches) sendBatch(_ context.Context, batch managercli
 	return nil
 }
 
-func (r *recordingJobScopeBatches) detectionEntries(t *testing.T) []logv1.JobDetectionLogEntry {
+func (r *recordingJobScopeBatches) detectionEntries(t *testing.T) []*logv1.JobDetectionLogEntry {
 	t.Helper()
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	records := r.records[managerv1.LogKind_LOG_KIND_JOB_DETECTION]
-	out := make([]logv1.JobDetectionLogEntry, 0, len(records))
+	out := make([]*logv1.JobDetectionLogEntry, 0, len(records))
 	for _, record := range records {
-		var entry logv1.JobDetectionLogEntry
-		if err := protojson.Unmarshal(record, &entry); err != nil {
+		entry := &logv1.JobDetectionLogEntry{}
+		if err := protojson.Unmarshal(record, entry); err != nil {
 			t.Fatalf("unmarshal detection log record: %v", err)
 		}
 		out = append(out, entry)
@@ -67,17 +67,17 @@ func (r *recordingJobScopeBatches) detectionEntries(t *testing.T) []logv1.JobDet
 	return out
 }
 
-func (r *recordingJobScopeBatches) runtimeTelemetryEntries(t *testing.T) []logv1.JobRuntimeTelemetryLogEntry {
+func (r *recordingJobScopeBatches) runtimeTelemetryEntries(t *testing.T) []*logv1.JobRuntimeTelemetryLogEntry {
 	t.Helper()
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	records := r.records[managerv1.LogKind_LOG_KIND_JOB_RUNTIME_TELEMETRY]
-	out := make([]logv1.JobRuntimeTelemetryLogEntry, 0, len(records))
+	out := make([]*logv1.JobRuntimeTelemetryLogEntry, 0, len(records))
 	for _, record := range records {
-		var entry logv1.JobRuntimeTelemetryLogEntry
-		if err := protojson.Unmarshal(record, &entry); err != nil {
+		entry := &logv1.JobRuntimeTelemetryLogEntry{}
+		if err := protojson.Unmarshal(record, entry); err != nil {
 			t.Fatalf("unmarshal runtime telemetry log record: %v", err)
 		}
 		out = append(out, entry)
@@ -85,17 +85,17 @@ func (r *recordingJobScopeBatches) runtimeTelemetryEntries(t *testing.T) []logv1
 	return out
 }
 
-func (r *recordingJobScopeBatches) jobResultEntries(t *testing.T) []logv1.JobResultLogEntry {
+func (r *recordingJobScopeBatches) jobResultEntries(t *testing.T) []*logv1.JobResultLogEntry {
 	t.Helper()
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	records := r.records[managerv1.LogKind_LOG_KIND_JOB_RESULT]
-	out := make([]logv1.JobResultLogEntry, 0, len(records))
+	out := make([]*logv1.JobResultLogEntry, 0, len(records))
 	for _, record := range records {
-		var entry logv1.JobResultLogEntry
-		if err := protojson.Unmarshal(record, &entry); err != nil {
+		entry := &logv1.JobResultLogEntry{}
+		if err := protojson.Unmarshal(record, entry); err != nil {
 			t.Fatalf("unmarshal job result log record: %v", err)
 		}
 		out = append(out, entry)

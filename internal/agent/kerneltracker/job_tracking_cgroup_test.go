@@ -50,7 +50,9 @@ func TestJobTrackingState_Bind_IdempotentSameJob(t *testing.T) {
 	s := newJobTrackingState()
 	jobID := newJob("100")
 
-	if !s.bind(jobID, 42) || !s.bind(jobID, 42) {
+	first := s.bind(jobID, 42)
+	second := s.bind(jobID, 42)
+	if !first || !second {
 		t.Fatalf("repeated Bind for same (jobID, cgroupID) must succeed")
 	}
 }
@@ -190,7 +192,9 @@ func TestJobTrackingState_StageCgroupBasename_IdempotentSameJob(t *testing.T) {
 	s := newJobTrackingState()
 	jobID := newJob("100")
 
-	if !s.putStaging("docker-aaaa.scope", jobID) || !s.putStaging("docker-aaaa.scope", jobID) {
+	first := s.putStaging("docker-aaaa.scope", jobID)
+	second := s.putStaging("docker-aaaa.scope", jobID)
+	if !first || !second {
 		t.Fatal("repeated StageCgroupBasename for same (basename, jobID) must succeed")
 	}
 	if got := len(s.stagingByBasename); got != 1 {

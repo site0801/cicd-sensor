@@ -27,9 +27,3 @@ func requestPeerPID(ctx context.Context) (int32, error) {
 	_ = ctx
 	return 0, nil
 }
-
-// requestPeerUID returns 0 on non-linux dev builds.
-func requestPeerUID(ctx context.Context) (uint32, error) {
-	_ = ctx
-	return 0, nil
-}
