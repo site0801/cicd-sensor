@@ -24,6 +24,7 @@ help:
 	@printf '  %-24s %s\n' 'make check' 'run generation, tests, rule validation, and diff checks'
 	@printf '  %-24s %s\n' 'make build' 'build Linux amd64/arm64 release binaries into ./dist'
 	@printf '  %-24s %s\n' 'make build-local-ctl' 'build cicd-sensorctl for the local host into ./bin'
+	@printf '  %-24s %s\n' 'make bench-cel' 'run CEL evaluation benchmark once'
 	@printf '  %-24s %s\n' 'make rules-bundle' 'bundle rules/ into $(RULE_BUNDLE)'
 	@printf '  %-24s %s\n' 'make test-integration' 'run privileged Linux integration tests'
 	@printf '  %-24s %s\n' 'make clean' 'remove local build outputs'
@@ -65,6 +66,10 @@ build-linux:
 .PHONY: test
 test:
 	$(GO) test -count=1 ./...
+
+.PHONY: bench-cel
+bench-cel:
+	$(GO) test -bench='BenchmarkEvaluate' -run='^$$' -benchmem ./internal/agent/evaluation
 
 .PHONY: test-abi
 test-abi:
