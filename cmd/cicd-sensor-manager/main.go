@@ -47,13 +47,13 @@ func main() {
 		fmt.Fprintln(flag.CommandLine.Output(), managerUsage)
 		fmt.Fprintln(flag.CommandLine.Output())
 		fmt.Fprintln(flag.CommandLine.Output(), "Required:")
-		fmt.Fprintln(flag.CommandLine.Output(), "  --config PATH")
+		fmt.Fprintln(flag.CommandLine.Output(), "  --config PATH or CICD_SENSOR_MANAGER_CONFIG_FILE")
 		fmt.Fprintln(flag.CommandLine.Output(), "        Manager startup config YAML.")
 		fmt.Fprintln(flag.CommandLine.Output(), "  CICD_SENSOR_MANAGER_TOKEN{,_2} or --manager-token-file PATH")
 		fmt.Fprintln(flag.CommandLine.Output(), "        Manager bearer token secret. Provide up to 2 tokens for rotation overlap.")
 		fmt.Fprintln(flag.CommandLine.Output())
 		fmt.Fprintln(flag.CommandLine.Output(), "Optional:")
-		fmt.Fprintln(flag.CommandLine.Output(), "  --rules PATH")
+		fmt.Fprintln(flag.CommandLine.Output(), "  --rules PATH or CICD_SENSOR_MANAGER_RULES_FILE")
 		fmt.Fprintln(flag.CommandLine.Output(), "        Customer rules YAML file. When omitted, only baseline rules are served unless disabled in config.")
 	}
 	flag.StringVar(&configFileFlag, "config", "", "Path to the manager startup config file.")
@@ -72,8 +72,10 @@ func main() {
 		slog.ErrorContext(ctx, "manager_failed", "error", err)
 		os.Exit(1)
 	}
+	configFile := resolveFilePathFromFlagOrEnv(configFileFlag, "CICD_SENSOR_MANAGER_CONFIG_FILE", "manager_config_file", logger)
+	rulesFile := resolveFilePathFromFlagOrEnv(rulesPath, "CICD_SENSOR_MANAGER_RULES_FILE", "manager_rules_file", logger)
 	opts := managerStartupOptions{
-		ConfigFile: configFileFlag,
+		ConfigFile: configFile,
 		Tokens:     tokens,
 	}
 	if err := validateManagerStartupOptions(opts); err != nil {
@@ -88,8 +90,8 @@ func main() {
 
 	bindAddress := startupConfig.BindAddress()
 
-	if rulesPath == "" {
-		slog.InfoContext(ctx, "manager_rules_disabled", "reason", "no --rules flag")
+	if rulesFile == "" {
+		slog.InfoContext(ctx, "manager_rules_disabled", "reason", "no --rules flag or CICD_SENSOR_MANAGER_RULES_FILE")
 	}
 
 	baselineEnabled := !startupConfig.DisableBaseline
@@ -109,13 +111,13 @@ func main() {
 		"version", version,
 		"addr", bindAddress,
 		"config_file", opts.ConfigFile,
-		"rules_file", rulesPath,
+		"rules_file", rulesFile,
 		"baseline_enabled", baselineEnabled,
 		"transport", "plain-http",
 		"transport_note", "TLS must be terminated by upstream load balancer or similar",
 	)
 
-	s := manager.NewServer(logger, bindAddress, opts.Tokens, servedConfig, rulesPath, &startupConfig, router)
+	s := manager.NewServer(logger, bindAddress, opts.Tokens, servedConfig, rulesFile, &startupConfig, router)
 	if err := s.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		slog.ErrorContext(ctx, "manager_failed", "error", err)
 		os.Exit(1)
@@ -128,9 +130,28 @@ func validateManagerStartupOptions(opts managerStartupOptions) error {
 		return errors.New("manager token is required: set CICD_SENSOR_MANAGER_TOKEN or --manager-token-file")
 	}
 	if opts.ConfigFile == "" {
-		return errors.New("--config is required")
+		return errors.New("--config or CICD_SENSOR_MANAGER_CONFIG_FILE is required")
 	}
 	return nil
+}
+
+// resolveFilePathFromFlagOrEnv returns flagValue when non-empty; otherwise
+// the value of envName. When both are set the flag wins and a warning is
+// logged so an operator can spot a stale EnvironmentFile.
+func resolveFilePathFromFlagOrEnv(flagValue, envName, logKey string, logger *slog.Logger) string {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	if flagValue != "" {
+		if os.Getenv(envName) != "" {
+			logger.Warn(logKey+"_both_sources_specified",
+				"preferred", "flag",
+				"ignored", envName,
+			)
+		}
+		return flagValue
+	}
+	return os.Getenv(envName)
 }
 
 func resolveManagerTokenSecrets(tokenFiles []string, logger *slog.Logger) ([]string, error) {

@@ -39,7 +39,7 @@ func TestValidateManagerStartupOptions(t *testing.T) {
 			opts: managerStartupOptions{
 				Tokens: []string{validToken},
 			},
-			wantErr: "--config is required",
+			wantErr: "--config or CICD_SENSOR_MANAGER_CONFIG_FILE",
 		},
 		{
 			name:    "missing token and config reports token first",
@@ -195,6 +195,79 @@ func TestResolveManagerTokenSecrets(t *testing.T) {
 			t.Fatalf("resolveManagerTokenSecrets: got error %v, want nil", err)
 		}
 		assertTokens(t, got, nil)
+	})
+}
+
+func TestResolveFilePathFromFlagOrEnv(t *testing.T) {
+	const envName = "CICD_SENSOR_MANAGER_CONFIG_FILE"
+	const logKey = "manager_config_file"
+	const warnMsg = "manager_config_file_both_sources_specified"
+
+	t.Run("flag only", func(t *testing.T) {
+		t.Setenv(envName, "")
+		var logs bytes.Buffer
+		logger := slog.New(slog.NewJSONHandler(&logs, nil))
+
+		got := resolveFilePathFromFlagOrEnv("/flag/path", envName, logKey, logger)
+		if got != "/flag/path" {
+			t.Fatalf("got %q, want /flag/path", got)
+		}
+		if strings.Contains(logs.String(), warnMsg) {
+			t.Fatalf("flag-only path should not warn: %s", logs.String())
+		}
+	})
+
+	t.Run("env only", func(t *testing.T) {
+		t.Setenv(envName, "/env/path")
+		var logs bytes.Buffer
+		logger := slog.New(slog.NewJSONHandler(&logs, nil))
+
+		got := resolveFilePathFromFlagOrEnv("", envName, logKey, logger)
+		if got != "/env/path" {
+			t.Fatalf("got %q, want /env/path", got)
+		}
+		if strings.Contains(logs.String(), warnMsg) {
+			t.Fatalf("env-only path should not warn: %s", logs.String())
+		}
+	})
+
+	t.Run("both set: flag wins and warns", func(t *testing.T) {
+		t.Setenv(envName, "/env/path")
+		var logs bytes.Buffer
+		logger := slog.New(slog.NewJSONHandler(&logs, nil))
+
+		got := resolveFilePathFromFlagOrEnv("/flag/path", envName, logKey, logger)
+		if got != "/flag/path" {
+			t.Fatalf("got %q, want /flag/path", got)
+		}
+		if !strings.Contains(logs.String(), warnMsg) {
+			t.Fatalf("expected warning %q in logs: %s", warnMsg, logs.String())
+		}
+		if !strings.Contains(logs.String(), envName) {
+			t.Fatalf("warning should name the env var: %s", logs.String())
+		}
+	})
+
+	t.Run("neither set", func(t *testing.T) {
+		t.Setenv(envName, "")
+		var logs bytes.Buffer
+		logger := slog.New(slog.NewJSONHandler(&logs, nil))
+
+		got := resolveFilePathFromFlagOrEnv("", envName, logKey, logger)
+		if got != "" {
+			t.Fatalf("got %q, want empty", got)
+		}
+		if strings.Contains(logs.String(), warnMsg) {
+			t.Fatalf("no-source path should not warn: %s", logs.String())
+		}
+	})
+
+	t.Run("nil logger does not panic when both set", func(t *testing.T) {
+		t.Setenv(envName, "/env/path")
+		got := resolveFilePathFromFlagOrEnv("/flag/path", envName, logKey, nil)
+		if got != "/flag/path" {
+			t.Fatalf("got %q, want /flag/path", got)
+		}
 	})
 }
 
