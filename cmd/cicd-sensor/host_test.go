@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -209,6 +212,72 @@ func TestBuildHostEndRequestUsesGitHubEnvFallback(t *testing.T) {
 		if got[key] != value {
 			t.Fatalf("%s: got %q, want %q", key, got[key], value)
 		}
+	}
+}
+
+func TestPostGitHubHostEndChecksHealthThenEnds(t *testing.T) {
+	t.Parallel()
+
+	socketPath := newShortSocketPath(t)
+	var paths []string
+	var pathsMu sync.Mutex
+	server := newUnixSocketTestServer(t, socketPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pathsMu.Lock()
+		paths = append(paths, r.URL.Path)
+		pathsMu.Unlock()
+		switch r.URL.Path {
+		case "/v1/github/job/health", "/v1/github/host/end":
+			w.WriteHeader(http.StatusOK)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	if err := postGitHubHostEnd(context.Background(), socketPath, map[string]string{"provider": "github"}); err != nil {
+		t.Fatalf("postGitHubHostEnd: %v", err)
+	}
+	want := []string{"/v1/github/job/health", "/v1/github/host/end"}
+	pathsMu.Lock()
+	defer pathsMu.Unlock()
+	if strings.Join(paths, ",") != strings.Join(want, ",") {
+		t.Fatalf("paths: got %v, want %v", paths, want)
+	}
+}
+
+func TestPostGitHubHostEndStopsWhenHealthFails(t *testing.T) {
+	t.Parallel()
+
+	socketPath := newShortSocketPath(t)
+	var paths []string
+	var pathsMu sync.Mutex
+	server := newUnixSocketTestServer(t, socketPath, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pathsMu.Lock()
+		paths = append(paths, r.URL.Path)
+		pathsMu.Unlock()
+		switch r.URL.Path {
+		case "/v1/github/job/health":
+			http.Error(w, "not healthy", http.StatusForbidden)
+		case "/v1/github/host/end":
+			http.Error(w, "host end must not be called after failed health check", http.StatusInternalServerError)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	err := postGitHubHostEnd(context.Background(), socketPath, map[string]string{"provider": "github"})
+	if err == nil {
+		t.Fatal("expected health check error")
+	}
+	if !strings.Contains(err.Error(), "job health:") {
+		t.Fatalf("error: got %q, want job health prefix", err.Error())
+	}
+	want := []string{"/v1/github/job/health"}
+	pathsMu.Lock()
+	defer pathsMu.Unlock()
+	if strings.Join(paths, ",") != strings.Join(want, ",") {
+		t.Fatalf("paths: got %v, want %v", paths, want)
 	}
 }
 

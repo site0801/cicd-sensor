@@ -171,10 +171,17 @@ func runHostEnd(args []string) {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	if err := postSocket(ctx, socketPath, "/v1/github/host/end", req); err != nil {
+	if err := postGitHubHostEnd(ctx, socketPath, req); err != nil {
 		fmt.Fprintf(os.Stderr, "host end: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func postGitHubHostEnd(ctx context.Context, socketPath string, req map[string]string) error {
+	if err := postSocket(ctx, socketPath, "/v1/github/job/health", req); err != nil {
+		return fmt.Errorf("job health: %w", err)
+	}
+	return postSocket(ctx, socketPath, "/v1/github/host/end", req)
 }
 
 func buildHostEndRequest(identity jobIdentityFlags) (map[string]string, error) {
