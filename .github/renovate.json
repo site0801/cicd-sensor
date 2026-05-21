@@ -4,7 +4,7 @@
     "config:recommended",
     "helpers:pinGitHubActionDigests"
   ],
-  "dependencyDashboard": true,
+  "dependencyDashboard": false,
   "internalChecksFilter": "strict",
   "labels": [
     "dependencies"
@@ -43,12 +43,12 @@
       ]
     },
     {
-      "description": "Update SHA-pinned GitHub Actions examples in README and docs after a 1 day cooldown",
+      "description": "Update SHA-pinned GitHub Actions examples in README and docs",
       "matchManagers": [
         "custom.regex"
       ],
       "groupName": "github actions docs examples",
-      "minimumReleaseAge": "1 day"
+      "minimumReleaseAge": "0 days"
     }
   ],
   "customManagers": [
