@@ -46,9 +46,13 @@ jobs:
 
 ## Demo
 
-<p align="center">
-  <img src="docs/assets/demo.gif" alt="cicd-sensor GitHub Actions demo" width="100%">
-</p>
+<div align="center">
+  <table>
+    <tr><td>
+      <img src="docs/assets/demo.gif" alt="cicd-sensor GitHub Actions demo" width="720">
+    </td></tr>
+  </table>
+</div>
 
 > [!NOTE]
 > **About the author** — Built by [Hiroki Suezawa (@rung)](https://www.suezawa.net), author of the [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), contributor to the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and early contributor to [OSC&R / pbom.dev](https://pbom.dev/). cicd-sensor is the runtime defender that work has been pointing to.
