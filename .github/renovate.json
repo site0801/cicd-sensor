@@ -6,6 +6,7 @@
   ],
   "dependencyDashboard": false,
   "internalChecksFilter": "strict",
+  "rebaseWhen": "behind-base-branch",
   "labels": [
     "dependencies"
   ],
