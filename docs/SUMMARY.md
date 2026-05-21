@@ -18,6 +18,7 @@
   - [Rule modifiers](user-guide/rule-modifiers.md)
   - [Rule development](user-guide/rule-development.md)
 - [Logging](user-guide/logging.md)
+- [Attestation predicate](user-guide/attestation-predicate.md)
 
 # Developer Guide
 

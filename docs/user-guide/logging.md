@@ -59,3 +59,5 @@ Values that look like tokens, passwords, secrets, or auth headers are replaced w
 | How do I investigate the source event behind a SIEM alert? | Join `job_detection_log.event.id` with `job_runtime_telemetry_log.event.id` |
 
 When building a compatible log consumer, use the linked proto schema as the exact field reference.
+
+For build verification rather than detailed log consumption, see [Attestation predicate](attestation-predicate.md).
