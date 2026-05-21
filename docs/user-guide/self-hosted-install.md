@@ -100,7 +100,6 @@ IgnoreOnIsolate=yes
 
 [Service]
 Type=simple
-UMask=0000
 RuntimeDirectory=cicd-sensor
 RuntimeDirectoryMode=0755
 ExecStart=/opt/cicd-sensor/cicd-sensor agent start \

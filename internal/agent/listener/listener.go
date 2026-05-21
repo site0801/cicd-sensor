@@ -33,6 +33,7 @@ const (
 	listenerWriteTimeout      = 30 * time.Second
 	listenerIdleTimeout       = 60 * time.Second
 	listenerShutdownTimeout   = 5 * time.Second
+	controlSocketMode         = 0o777
 )
 
 // Listener serves the control socket API over a unix domain socket.
@@ -128,6 +129,10 @@ func (l *Listener) Serve(ctx context.Context) error {
 	ln, err := net.Listen("unix", l.socketPath)
 	if err != nil {
 		return fmt.Errorf("listen %s: %w", l.socketPath, err)
+	}
+	if err := os.Chmod(l.socketPath, controlSocketMode); err != nil {
+		_ = ln.Close()
+		return fmt.Errorf("chmod socket %s: %w", l.socketPath, err)
 	}
 	l.logger.InfoContext(ctx, "listener_started", "socket", l.socketPath)
 

@@ -123,6 +123,51 @@ func TestListener_RemovesStaleSocketBeforeServe(t *testing.T) {
 	}
 }
 
+func TestListener_CreatesWorldConnectableSocket(t *testing.T) {
+	dir := newTestSocketDir(t, "cicd-sensor-socket-mode-test-")
+	defer os.RemoveAll(dir)
+
+	sock := filepath.Join(dir, "t.sock")
+	ctx, cancel := context.WithCancel(context.Background())
+	registry := jobregistry.New(testLogger)
+	l := listener.New(listener.Config{
+		Logger:                testLogger,
+		JobRegistry:           registry,
+		SocketPath:            sock,
+		HostManagerConnection: managerclient.Connection{},
+		RunnerKind:            "machine",
+		Provider:              jobcontext.ProviderGitHub,
+	})
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- l.Serve(ctx) }()
+
+	deadline := time.After(3 * time.Second)
+	for {
+		fi, err := os.Stat(sock)
+		if err == nil {
+			if got, want := fi.Mode().Perm(), os.FileMode(0o777); got != want {
+				t.Fatalf("socket mode: got %v, want %v", got, want)
+			}
+			break
+		}
+		select {
+		case err := <-errCh:
+			skipIfListenPermissionDenied(t, err)
+			t.Fatalf("listener failed to start: %v", err)
+		case <-deadline:
+			t.Fatal("socket did not appear within timeout")
+		default:
+			time.Sleep(10 * time.Millisecond)
+		}
+	}
+
+	cancel()
+	if err := <-errCh; err != nil {
+		t.Fatalf("listener shutdown: %v", err)
+	}
+}
+
 func TestListener_RegularFileSocketPathReturnsError(t *testing.T) {
 	dir := newTestSocketDir(t, "cicd-sensor-regular-file-test-")
 	defer os.RemoveAll(dir)
