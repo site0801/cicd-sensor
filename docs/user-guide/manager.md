@@ -57,6 +57,11 @@ See [cicd-sensor GitHub Packages](https://github.com/orgs/cicd-sensor/packages?r
 The manager does not terminate TLS directly.
 Design HTTPS / TLS, authentication boundaries, and private network exposure with cloud-side components such as a load balancer, ingress, API Gateway, service mesh, or private network.
 
+## Network requirements
+
+The manager fetches the baseline rule bundle from public OCI registries (`ghcr.io`, `quay.io`, `registry.gitlab.com`).
+Allow outbound HTTPS to these hosts.
+
 ## Startup files
 
 The manager reads a startup config file and an optional rule bundle file.
