@@ -176,7 +176,7 @@ Use this mapping to choose patterns such as storing all logs in one GCS destinat
 | Sink type | Required settings | Notes |
 | --- | --- | --- |
 | `gcs` | `uri` | `uri` is a `gs://...` object-storage URI. Include any desired object key path in the URI. |
-| `pubsub` | `project_id`, `topic` | Publishes log batches to the Pub/Sub topic. |
+| `pubsub` | `project_id`, `topic` | Publishes one plain JSON record per message. |
 | `s3` | `uri`, `region` | `uri` is an `s3://...` object-storage URI. Include any desired object key path in the URI. |
 
 Store logs in GCS:
@@ -223,14 +223,3 @@ Do not write service account keys or credential paths into `manager.yaml`.
 
 Cloud credentials for S3 / GCS / Pub/Sub are held only by the manager process.
 The Agent does not receive cloud credentials.
-
-### Pub/Sub message framing
-
-Every `pubsub` message is gzip-compressed NDJSON with attributes `content_encoding: gzip`, `content_type: application/x-ndjson`, and `log_kind`.
-
-- `job_detection_log`: one record per message.
-- `job_result_log`: one record per message.
-- `job_runtime_telemetry_log`: multiple records per message.
-
-This means downstreams expecting one plain-JSON record per message (BigQuery subscriptions, the Pub/Sub-to-BigQuery Dataflow template, some third-party connectors) cannot consume the stream directly.
-A per-record uncompressed mode can be added as a sink option on request.
