@@ -43,16 +43,16 @@ flowchart LR
     class CONFIG,COLLECTOR service
 ```
 
-The management API is not defined yet.
-If a UI or operator API becomes necessary, it should be designed separately around concrete consumers and use cases.
-
 ## Config and rule delivery
 
 Agents fetch config and rules with `ConfigService.FetchConfig`.
 In manager mode, repository-local `.cicd-sensor/config.yaml` and `.cicd-sensor/rules/` are not used.
 
-The Manager reads startup config and rule bundle files.
-File paths can be specified by CLI flags or environment variables, but the config / rules contents themselves are not expanded into environment variables.
+Startup config is read once at process start.
+Rules are checked on each `FetchConfig` request: if the rule bundle file's modification time or size has changed, it is re-parsed; otherwise the cached parse is reused.
+Rule updates therefore take effect by replacing the file on disk, without restarting the Manager.
+
+File paths can be specified by CLI flags or environment variables, but the config and rule contents themselves are not expanded into environment variables.
 
 Rule sources returned by the Manager are merged and compiled by the Agent.
 The Manager holds the rule bundle, but it does not evaluate runtime events.
@@ -73,5 +73,5 @@ Agents do not receive cloud credentials.
 - Treat the Manager as a stateless config server and log router.
 - Replicas with the same startup config, rule bundle, tokens, and cloud credentials can scale horizontally.
 - Authentication validates the bearer token on each request.
-- Token and config reload is done by process restart.
+- Token, startup config, and output routing reload by process restart. Rule bundle changes are picked up on the next `FetchConfig` request without a restart.
 - TLS is not terminated inside the Manager process. Termination belongs to Ingress, load balancer, service mesh, or private network infrastructure.

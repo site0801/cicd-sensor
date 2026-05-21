@@ -81,6 +81,7 @@ Linux kernel: 5.15 or later on `x86_64`, 6.1 or later on `aarch64`.
 - [User Guide](https://cicd-sensor.github.io/user-guide/overview.html) — deployment paths for GitHub Actions and GitLab CI/CD.
 - [Rules](https://cicd-sensor.github.io/user-guide/rules.html) — write detection, collection, and correlation rules.
 - [Logging](https://cicd-sensor.github.io/user-guide/logging.html) — log format delivered by the manager.
+- [Attestation predicate](https://cicd-sensor.github.io/user-guide/attestation-predicate.html) — runtime-trace predicate for CI/CD runtime evidence.
 - [Developer Guide](https://cicd-sensor.github.io/developer-guide/overview.html) — agent, eBPF runtime, manager, and rule engine internals.
 
 ## License
