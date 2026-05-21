@@ -159,7 +159,7 @@ Requires=cicd-sensor-agent.service docker.service
 [Service]
 Type=simple
 Group=docker
-UMask=0007
+UMask=0117
 ExecStartPre=/bin/rm -f /run/docker.sock
 ExecStart=/opt/cicd-sensor/cicd-sensor proxy dockerd --provider github
 Restart=on-failure
@@ -176,6 +176,10 @@ docker info
 ```
 
 For GitLab CI/CD, change `--provider github` to `--provider gitlab`.
+
+Docker's systemd socket unit commonly uses `SocketMode=0660` and `SocketGroup=docker`.
+Because the cicd-sensor Docker proxy creates `/run/docker.sock` from a service process, this service uses `Group=docker` and `UMask=0117` to produce the same `root:docker` / `0660` access model.
+Adjust these settings if your runner host manages Docker socket access differently.
 
 ## Dockerd socket setting
 
