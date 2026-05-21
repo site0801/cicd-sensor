@@ -37,7 +37,7 @@ COPY --from=lambda-adapter /lambda-adapter /opt/extensions/lambda-adapter
 COPY --from=builder /out/cicd-sensor-manager /usr/local/bin/cicd-sensor-manager
 
 # Default config and rules paths can be overridden by setting the env vars
-# or by passing --config / --rules flags. Set CICD_SENSOR_MANAGER_RULES_FILE
+# or by passing --config-file / --rules-file flags. Set CICD_SENSOR_MANAGER_RULES_FILE
 # to enable customer rules (no default since the file is optional).
 ENV CICD_SENSOR_MANAGER_CONFIG_FILE=/etc/cicd-sensor/manager.yaml
 

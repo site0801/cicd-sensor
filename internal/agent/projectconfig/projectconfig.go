@@ -1,5 +1,5 @@
 // Package projectconfig loads the project-side config passed to
-// `cicd-sensor project start --config`.
+// `cicd-sensor project start --config-file`.
 //
 // Keep this package narrow: fields here are explicit project-owned inputs, not
 // a catch-all for agent runtime defaults.

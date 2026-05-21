@@ -125,7 +125,7 @@ rules-validate:
 rules-bundle:
 	mkdir -p $(DIST_DIR)
 	rm -f $(RULE_BUNDLE)
-	$(GO) run $(GO_MOD_FLAG) ./cmd/cicd-sensorctl rule bundle --input-dir rules --output $(RULE_BUNDLE)
+	$(GO) run $(GO_MOD_FLAG) ./cmd/cicd-sensorctl rule bundle --input-dir rules --output-file $(RULE_BUNDLE)
 
 .PHONY: rules-bundle-validate
 rules-bundle-validate: rules-bundle
