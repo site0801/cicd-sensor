@@ -3,7 +3,7 @@
 On GitHub-hosted runners, add `cicd-sensor/cicd-sensor-action` to the workflow to start monitoring.
 
 With the default settings, the cicd-sensor action starts the agent before your workload, records job runtime activity, and uploads the HTML report and runtime-trace attestation predicate as artifacts after the job.
-Optional inputs can enable centralized configuration through cicd-sensor Manager, cloud delivery for Job Result Log / Detection Log / Runtime Telemetry Log, and debug bundle uploads.
+Optional inputs can enable centralized configuration through cicd-sensor Manager, cloud delivery for Job Result Log / Detection Log / Runtime Telemetry Log, and debug bundle uploads that include Runtime Telemetry Log output.
 
 ## Usage
 

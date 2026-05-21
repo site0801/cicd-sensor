@@ -30,6 +30,7 @@ type JobScopeState struct {
 	ResolvedRules  rule.ResolvedRules
 	Observations   *observations.State
 	managerJobLogs joblogs.ManagerJobLogs
+	debugOutput    *joblogs.DebugOutput
 	// Zero means this scope did not configure a default; rule.Merge uses the system fallback.
 	DefaultMaxAlertsPerRule int
 }
@@ -65,6 +66,10 @@ func NewProject() *JobScopeState {
 
 func (s *JobScopeState) SetManagerJobLogs(logs joblogs.ManagerJobLogs) {
 	s.managerJobLogs = logs
+}
+
+func (s *JobScopeState) SetDebugOutput(output *joblogs.DebugOutput) {
+	s.debugOutput = output
 }
 
 func (s *JobScopeState) ManagerJobLogsForTesting() *joblogs.ManagerJobLogs {

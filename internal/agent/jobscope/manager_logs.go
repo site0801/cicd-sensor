@@ -143,6 +143,9 @@ func (s *JobScopeState) WriteRuntimeTelemetryLog(ctx context.Context, identity j
 			"error", err,
 		)
 	}
+	if s.debugOutput != nil {
+		_ = s.debugOutput.WriteRuntimeTelemetryPayload(ctx, payload)
+	}
 }
 
 func (s *JobScopeState) FinalizeStreamingLogs(ctx context.Context) error {

@@ -26,6 +26,7 @@ type githubProjectStartRequest struct {
 	RuleSources             []rulesource.LoadedRules `json:"rule_sources,omitempty"`
 	ManagerURL              string                   `json:"manager_url,omitempty"`
 	ManagerToken            string                   `json:"manager_token,omitempty"`
+	DebugOutputDir          string                   `json:"debug_output_dir,omitempty"`
 }
 
 func (r *githubProjectStartRequest) Validate() error {

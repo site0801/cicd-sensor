@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/job"
+	"github.com/cicd-sensor/cicd-sensor/internal/agent/joblogs"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/jobscope"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/managerclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
@@ -23,19 +24,24 @@ func (jr *JobRegistry) ApplyGitHubProjectStart(
 	projectManagerConnection managerclient.Connection,
 	projectManagerClient ManagerConfigFetcher,
 	fetchBaseline bool,
+	debugOutputDirs ...string,
 ) (*job.Job, error) {
+	debugOutputDir := ""
+	if len(debugOutputDirs) > 0 {
+		debugOutputDir = debugOutputDirs[0]
+	}
 	// Project/start peer authorization lives here because existing-host and
 	// hosted project-only flows use different Job/BPF state.
 	reservation := jr.reserveJobStart(identity)
 	if reservation.existing != nil {
-		return jr.attachGitHubProjectScopeToExistingJob(ctx, reservation.existing, identity, metadata, runnerKind, peerPID, projectDefaultMaxAlertsPerRule, projectRuleSources, projectManagerConnection, projectManagerClient, fetchBaseline)
+		return jr.attachGitHubProjectScopeToExistingJob(ctx, reservation.existing, identity, metadata, runnerKind, peerPID, projectDefaultMaxAlertsPerRule, projectRuleSources, projectManagerConnection, projectManagerClient, fetchBaseline, debugOutputDir)
 	}
 	if reservation.inFlight() {
 		return nil, ErrJobAlreadyRegistered
 	}
 	defer reservation.done()
 
-	return jr.startGitHubProjectOnlyJob(ctx, identity, metadata, runnerKind, peerPID, projectDefaultMaxAlertsPerRule, projectRuleSources, projectManagerConnection, projectManagerClient, fetchBaseline)
+	return jr.startGitHubProjectOnlyJob(ctx, identity, metadata, runnerKind, peerPID, projectDefaultMaxAlertsPerRule, projectRuleSources, projectManagerConnection, projectManagerClient, fetchBaseline, debugOutputDir)
 }
 
 func (jr *JobRegistry) attachGitHubProjectScopeToExistingJob(
@@ -50,6 +56,7 @@ func (jr *JobRegistry) attachGitHubProjectScopeToExistingJob(
 	projectManagerConnection managerclient.Connection,
 	projectManagerClient ManagerConfigFetcher,
 	fetchBaseline bool,
+	debugOutputDir string,
 ) (*job.Job, error) {
 	if existing.ProjectScope() != nil {
 		return nil, job.ErrProjectScopeAlreadySet
@@ -69,6 +76,7 @@ func (jr *JobRegistry) attachGitHubProjectScopeToExistingJob(
 	if err != nil {
 		return nil, err
 	}
+	jr.attachDebugOutput(ctx, projectScope, debugOutputDir)
 	// SetProjectScope swaps in the host+project evaluation bundle atomically.
 	if err := existing.SetProjectScope(ctx, projectScope); err != nil {
 		return nil, err
@@ -87,6 +95,7 @@ func (jr *JobRegistry) startGitHubProjectOnlyJob(
 	projectManagerConnection managerclient.Connection,
 	projectManagerClient ManagerConfigFetcher,
 	fetchBaseline bool,
+	debugOutputDir string,
 ) (*job.Job, error) {
 	var projectScope *jobscope.JobScopeState
 	var err error
@@ -98,6 +107,7 @@ func (jr *JobRegistry) startGitHubProjectOnlyJob(
 	if err != nil {
 		return nil, err
 	}
+	jr.attachDebugOutput(ctx, projectScope, debugOutputDir)
 
 	// Hosted Actions without host/start create the Job runtime here.
 	job, err := jr.registerJobRuntime(ctx, identity, metadata, runnerKind)
@@ -116,6 +126,21 @@ func (jr *JobRegistry) startGitHubProjectOnlyJob(
 		}
 	}
 	return job, nil
+}
+
+func (jr *JobRegistry) attachDebugOutput(ctx context.Context, scope *jobscope.JobScopeState, debugOutputDir string) {
+	if scope == nil || debugOutputDir == "" {
+		return
+	}
+	output, err := joblogs.NewDebugOutput(jr.logger, debugOutputDir)
+	if err != nil {
+		jr.logger.WarnContext(ctx, "debug_output_unavailable",
+			"debug_output_dir", debugOutputDir,
+			"error", err,
+		)
+		return
+	}
+	scope.SetDebugOutput(output)
 }
 
 // buildProjectScopeFromManagerConfig builds a resolved project scope from manager config.

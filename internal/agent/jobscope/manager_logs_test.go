@@ -1,9 +1,11 @@
 package jobscope_test
 
 import (
+	"compress/gzip"
 	"context"
 	"io"
 	"log/slog"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -218,6 +220,55 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_EmitsEvent(t *testing.T) {
 		t.Fatalf("event id: got %q, want %q", got, want)
 	}
 	if got, want := entries[0].Event.GetNetworkConnect().GetRemoteIp(), "203.0.113.10"; got != want {
+		t.Fatalf("remote ip: got %q, want %q", got, want)
+	}
+}
+
+func TestJobScopeStateWriteRuntimeTelemetryLog_WritesDebugOutput(t *testing.T) {
+	t.Parallel()
+
+	debugDir := t.TempDir()
+	scope := jobscope.NewProject()
+	debugOutput, err := joblogs.NewDebugOutput(testJobScopeLogger, debugDir)
+	if err != nil {
+		t.Fatalf("NewDebugOutput: %v", err)
+	}
+	scope.SetDebugOutput(debugOutput)
+
+	event := testJobScopeNetworkEvent("event-debug-runtime", "203.0.113.30")
+	scope.WriteRuntimeTelemetryLog(context.Background(), testJobIdentity, testJobMetadata, "machine", event, testJobScopeLogger)
+
+	root, err := os.OpenRoot(debugDir)
+	if err != nil {
+		t.Fatalf("OpenRoot debug dir: %v", err)
+	}
+	defer root.Close()
+
+	file, err := root.Open(joblogs.DebugRuntimeTelemetryLogFilename)
+	if err != nil {
+		t.Fatalf("open debug telemetry: %v", err)
+	}
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatalf("gzip reader: %v", err)
+	}
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("read gzip: %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatalf("close gzip: %v", err)
+	}
+
+	var entry logv1.JobRuntimeTelemetryLogEntry
+	if err := protojson.Unmarshal(body, &entry); err != nil {
+		t.Fatalf("unmarshal debug runtime telemetry: %v\nbody=%s", err, body)
+	}
+	if got, want := entry.GetEvent().GetId(), event.ID; got != want {
+		t.Fatalf("event id: got %q, want %q", got, want)
+	}
+	if got, want := entry.GetEvent().GetNetworkConnect().GetRemoteIp(), "203.0.113.30"; got != want {
 		t.Fatalf("remote ip: got %q, want %q", got, want)
 	}
 }

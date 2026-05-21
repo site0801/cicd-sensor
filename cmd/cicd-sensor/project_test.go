@@ -258,6 +258,18 @@ func TestBuildProjectStartRequest_LoadsProjectManager(t *testing.T) {
 	}
 }
 
+func TestBuildProjectStartRequest_IncludesDebugOutputDir(t *testing.T) {
+	debugOutputDir := filepath.Join(t.TempDir(), "debug")
+
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{}, debugOutputDir)
+	if err != nil {
+		t.Fatalf("buildProjectStartRequest: %v", err)
+	}
+	if got["debug_output_dir"] != debugOutputDir {
+		t.Fatalf("debug_output_dir: got %#v, want %q", got["debug_output_dir"], debugOutputDir)
+	}
+}
+
 func TestBuildProjectStartRequest_ProjectManagerRequiresToken(t *testing.T) {
 	_, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{URL: "https://project-manager.example.com"})
 	if err == nil || !strings.Contains(err.Error(), "requires CICD_SENSOR_MANAGER_TOKEN") {

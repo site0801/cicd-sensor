@@ -49,6 +49,7 @@ func runProjectStart(args []string) {
 	var rulesPath string
 	var managerURL string
 	var managerTokenFilePath string
+	var debugOutputDir string
 	var identity jobIdentityFlags
 	var metadata jobMetadataFlags
 	fs.Usage = func() {
@@ -98,6 +99,8 @@ func runProjectStart(args []string) {
 		fmt.Fprintln(fs.Output(), "        Project scope manager URL. Cannot be combined with --config or --rules.")
 		fmt.Fprintln(fs.Output(), "  --manager-token-file PATH")
 		fmt.Fprintln(fs.Output(), "        Path to a file containing the project manager bearer token. Overrides CICD_SENSOR_MANAGER_TOKEN.")
+		fmt.Fprintln(fs.Output(), "  --debug-output-dir DIR")
+		fmt.Fprintln(fs.Output(), "        Directory for local debug output files.")
 	}
 	fs.StringVar(&socketPath, "socket", socketPath, "Agent control socket path.")
 	registerJobIdentityFlags(fs, &identity)
@@ -106,6 +109,7 @@ func runProjectStart(args []string) {
 	fs.StringVar(&rulesPath, "rules", "", "Path to the project-local rules YAML file.")
 	fs.StringVar(&managerURL, "manager-url", "", "Project scope manager URL.")
 	fs.StringVar(&managerTokenFilePath, "manager-token-file", "", "Path to a file containing the project manager bearer token.")
+	fs.StringVar(&debugOutputDir, "debug-output-dir", "", "Directory for local debug output files.")
 	if err := fs.Parse(args); err != nil {
 		os.Exit(2)
 	}
@@ -125,7 +129,7 @@ func runProjectStart(args []string) {
 		os.Exit(1)
 	}
 
-	req, err := buildProjectStartRequest(identity, metadata, configPath, rulesPath, projectManager)
+	req, err := buildProjectStartRequest(identity, metadata, configPath, rulesPath, projectManager, debugOutputDir)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "build request: %v\n", err)
 		os.Exit(1)
@@ -235,10 +239,14 @@ func writeProjectResult(outputPath string, body []byte, stdout io.Writer) error 
 	return nil
 }
 
-func buildProjectStartRequest(identity jobIdentityFlags, metadata jobMetadataFlags, configPath string, rulesPath string, manager managerConnectionConfig) (map[string]any, error) {
+func buildProjectStartRequest(identity jobIdentityFlags, metadata jobMetadataFlags, configPath string, rulesPath string, manager managerConnectionConfig, debugOutputDirs ...string) (map[string]any, error) {
 	identityReq, err := buildJobIdentityRequest(identity)
 	if err != nil {
 		return nil, err
+	}
+	debugOutputDir := ""
+	if len(debugOutputDirs) > 0 {
+		debugOutputDir = debugOutputDirs[0]
 	}
 
 	req := make(map[string]any, len(identityReq)+4)
@@ -246,6 +254,9 @@ func buildProjectStartRequest(identity jobIdentityFlags, metadata jobMetadataFla
 		req[key] = value
 	}
 	addJobMetadataRequest(req, metadata)
+	if debugOutputDir != "" {
+		req["debug_output_dir"] = debugOutputDir
+	}
 
 	if manager.URL != "" {
 		if configPath != "" {
