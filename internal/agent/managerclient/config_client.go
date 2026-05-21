@@ -17,7 +17,10 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/rulesource"
 )
 
-const fetchConfigTimeout = 30 * time.Second
+// fetchConfigTimeout bounds a single FetchConfig call. Set high enough
+// to absorb a cold-start manager (e.g. Lambda / scale-from-zero) that
+// can take tens of seconds to load baseline rules on first hit.
+const fetchConfigTimeout = time.Minute
 
 // ConfigClient wraps ConfigService.FetchConfig for host and project scopes.
 type ConfigClient struct {

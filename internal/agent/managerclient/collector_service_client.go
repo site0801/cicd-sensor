@@ -18,7 +18,10 @@ import (
 )
 
 const (
-	collectorServiceRequestTimeout = 30 * time.Second
+	// Bound a single IngestLog call. Sized for cold-start managers
+	// (Lambda / scale-from-zero) that can take tens of seconds before
+	// they answer the first request.
+	collectorServiceRequestTimeout = time.Minute
 	collectorServiceRetryBase      = time.Second
 	collectorServiceRetryMax       = 30 * time.Second
 	collectorServiceRetryAttempts  = 5
