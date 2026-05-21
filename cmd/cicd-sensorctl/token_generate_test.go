@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"errors"
 	"strings"
 	"testing"
@@ -37,15 +36,16 @@ func TestRunTokenGenerate_OutputShape(t *testing.T) {
 	}
 
 	secret := strings.TrimPrefix(token, managerauth.TokenPrefix)
-	if len(secret) != tokenSecretBytes*2 {
-		t.Fatalf("secret length: got %d, want %d", len(secret), tokenSecretBytes*2)
-	}
-	if _, err := hex.DecodeString(secret); err != nil {
-		t.Fatalf("secret is not lowercase hex: %v (secret=%q)", err, secret)
+	// 48 raw bytes encode to exactly 64 RawURLEncoding characters.
+	const wantLen = (tokenSecretBytes*8 + 5) / 6
+	if len(secret) != wantLen {
+		t.Fatalf("secret length: got %d, want %d", len(secret), wantLen)
 	}
 	for _, r := range secret {
-		if r >= 'A' && r <= 'Z' {
-			t.Fatalf("secret contains uppercase hex: %q", secret)
+		urlSafe := (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') ||
+			(r >= '0' && r <= '9') || r == '-' || r == '_'
+		if !urlSafe {
+			t.Fatalf("secret contains non-base64url character %q in %q", r, secret)
 		}
 	}
 

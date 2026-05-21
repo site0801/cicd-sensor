@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,9 +12,10 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/managerauth"
 )
 
-// tokenSecretBytes is the raw entropy size. 32 bytes hex-encodes to a
-// 64-character, 256-bit manager token secret.
-const tokenSecretBytes = 32
+// tokenSecretBytes is the raw entropy size. 48 bytes encode to a
+// 64-character RawURLEncoding string with ~384 bits of entropy and no
+// padding.
+const tokenSecretBytes = 48
 
 func runTokenGenerate(_ context.Context, args []string, stdout, stderr io.Writer) (int, error) {
 	fs := flag.NewFlagSet("token generate", flag.ContinueOnError)
@@ -41,13 +42,10 @@ func runTokenGenerate(_ context.Context, args []string, stdout, stderr io.Writer
 	return 0, nil
 }
 
-// generateTokenSecret returns a lowercase hex secret with 256 bits of
-// entropy. The returned string has no prefix; callers prepend
-// managerauth.TokenPrefix when emitting a manager bearer token.
 func generateTokenSecret() (string, error) {
 	buf := make([]byte, tokenSecretBytes)
 	if _, err := rand.Read(buf); err != nil {
 		return "", fmt.Errorf("read random bytes: %w", err)
 	}
-	return hex.EncodeToString(buf), nil
+	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
