@@ -122,13 +122,31 @@ With token files, specify `--manager-token-file` up to two times.
 
 ## manager.yaml
 
-Minimal config:
+Minimal config that actually persists logs. Defines one S3 sink and routes
+all three log kinds to it:
 
 ```yaml
 bind:
   address: "0.0.0.0"
   port: 8080
+
+sinks:
+  s3-out:
+    type: s3
+    uri: s3://cicd-sensor-prod/cicd-sensor/
+    region: ap-northeast-1
+
+output:
+  job_result_log:
+    destination: s3-out
+  job_detection_log:
+    destination: s3-out
+  job_runtime_telemetry_log:
+    destination: s3-out
 ```
+
+For richer routing (per-log-kind destinations, multiple sinks), see
+[Output routing](#output-routing).
 
 ## Output routing
 
@@ -137,7 +155,7 @@ When logs are aggregated through the manager, define `sinks` and `output`.
 
 ```yaml
 sinks:
-  gcs-audit:
+  gcs-result:
     type: gcs
     uri: gs://cicd-sensor-prod/cicd-sensor/
 
@@ -153,7 +171,7 @@ sinks:
 
 output:
   job_result_log:
-    destination: gcs-audit
+    destination: gcs-result
   job_detection_log:
     destination: pubsub-detection
   job_runtime_telemetry_log:
