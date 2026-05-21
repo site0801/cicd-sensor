@@ -19,7 +19,8 @@ const (
 	gcsImmediateFlushBytes   = 1
 	gcsImmediateFlushSeconds = 1
 
-	gcsRuntimeTelemetryFlushBytes   = 4 * 1024 * 1024 // 4 MiB
+	// Uncompressed JSONL threshold; see s3.go for the sizing rationale.
+	gcsRuntimeTelemetryFlushBytes   = 128 * 1024 * 1024
 	gcsRuntimeTelemetryFlushSeconds = 60
 )
 

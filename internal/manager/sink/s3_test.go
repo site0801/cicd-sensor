@@ -21,7 +21,7 @@ func TestS3FlushPolicy(t *testing.T) {
 		{
 			name:    "telemetry batches for object storage",
 			logKind: LogKindJobRuntimeTelemetry,
-			want:    FlushPolicy{FlushThresholdBytes: 4 * 1024 * 1024, FlushIntervalSeconds: 60},
+			want:    FlushPolicy{FlushThresholdBytes: 128 * 1024 * 1024, FlushIntervalSeconds: 60},
 		},
 		{
 			name:    "result is immediate",

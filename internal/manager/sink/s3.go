@@ -23,7 +23,11 @@ const (
 	s3ImmediateFlushBytes   = 1
 	s3ImmediateFlushSeconds = 1
 
-	s3RuntimeTelemetryFlushBytes   = 4 * 1024 * 1024 // 4 MiB
+	// Uncompressed JSONL threshold. Gzip on the agent typically shrinks
+	// runtime telemetry ~25-30x, so 128 MiB lands around 4-5 MB per S3
+	// object — large enough to keep the bucket listing readable while
+	// staying well under managerMaxRequestBytes (16 MiB compressed).
+	s3RuntimeTelemetryFlushBytes   = 128 * 1024 * 1024
 	s3RuntimeTelemetryFlushSeconds = 60
 )
 
