@@ -16,6 +16,9 @@ flowchart LR
     AGENT -->|"IngestLog<br/>Connect / Proto"| MANAGER
     MANAGER -->|"Store / Stream"| CLOUD
     CLOUD --> SIEM
+
+    classDef cicdSensor fill:#ecfdf5,stroke:#0f766e,color:#134e4a,stroke-width:1.5px;
+    class AGENT,MANAGER cicdSensor
 ```
 
 ## When to use it

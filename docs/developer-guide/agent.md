@@ -54,12 +54,39 @@ flowchart TB
     SCOPE --> LOGS
     SCOPE --> RESULT
 
+    classDef agentOuter fill:transparent,stroke:#0f766e,color:#064e3b,stroke-width:2px;
+    classDef registry   fill:#d1fae5,stroke:#0f766e,color:#064e3b,stroke-width:1px;
+    classDef kernel     fill:#ccfbf1,stroke:#0f766e,color:#134e4a,stroke-width:1px;
+    classDef outputs    fill:#dcfce7,stroke:#0f766e,color:#14532d,stroke-width:1px;
+    classDef leaf       fill:#ffffff,stroke:#94a3b8,color:#374151,stroke-width:1px;
+    class A agentOuter
+    class JR,JOBS registry
+    class KR kernel
+    class OUT outputs
+    class L,EVAL,SCOPE,KT,EBPF,KIO,LOGS,RESULT leaf
 ```
 
 This diagram is the reference point for reading the Agent implementation.
 `host start`, `project start`, and dockerd proxy staging requests enter the Agent through the Listener over a Unix socket.
 JobRegistry issues tracking commands to the Kernel Runtime.
 Scope owns rule, summary, and output state, but it does not operate the Kernel Runtime directly.
+
+## Concepts
+
+### Job
+
+A **Job** is one CI/CD job tracked by the Agent. It is identified by the provider-supplied job identity (repository, workflow run, job name, runner) and owns its own cgroup tracking, rule evaluation, scope-local summaries, and outputs. The Agent can run many Jobs at the same time; each Job is finalized independently when its work completes.
+
+### Scope
+
+A **Scope** is the configuration / control surface attached to a Job. Two kinds exist, and a single Job may have one or both:
+
+| Scope | Owner | Where it comes from | Typical setup |
+| --- | --- | --- | --- |
+| **Host scope** | Host operator (e.g., the platform team that installs cicd-sensor on the runner host) | `host start` from a runner hook | Self-hosted runners, where the agent is provisioned by infrastructure |
+| **Project scope** | Project / repository operator (e.g., the team owning the workflow) | `project start` from the cicd-sensor-action (or equivalent) | GitHub-hosted runners, where each workflow brings its own configuration through the Action |
+
+Each scope carries its own rules, evaluation state, and output destinations. The two are isolated: one scope cannot read or override the other's rules, and their outputs are emitted separately. This lets the host operator and the repository operator each configure cicd-sensor for their own concerns without interfering with each other — the host operator can enforce a baseline across all jobs on the host, while a repository can layer project-specific rules on top.
 
 ## Subsystems
 
