@@ -17,6 +17,7 @@ INTEGRATION_TEST_BIN ?= /tmp/cicd-sensor-kerneltracker-it.test
 
 LINUX_BINS := cicd-sensor cicd-sensor-manager cicd-sensorctl
 LINUX_ARCHES := amd64 arm64
+CTL_CROSS_TARGETS := darwin/amd64 darwin/arm64 windows/amd64 windows/arm64
 
 .DEFAULT_GOAL := help
 
@@ -27,6 +28,7 @@ help:
 	@printf '  %-24s %s\n' 'make test' 'run the normal Go test suite'
 	@printf '  %-24s %s\n' 'make check' 'run generation, tests, rule validation, and diff checks'
 	@printf '  %-24s %s\n' 'make build' 'build Linux amd64/arm64 release binaries into ./dist'
+	@printf '  %-24s %s\n' 'make build-ctl-cross' 'build cicd-sensorctl for macOS/Windows into ./dist'
 	@printf '  %-24s %s\n' 'make build-local-ctl' 'build cicd-sensorctl for the local host into ./bin'
 	@printf '  %-24s %s\n' 'make bench-cel' 'run CEL evaluation benchmark once'
 	@printf '  %-24s %s\n' 'make rules-bundle' 'bundle rules/ into $(RULE_BUNDLE)'
@@ -77,6 +79,22 @@ build-linux:
 				-o "$(DIST_DIR)/$${bin}_linux_$${arch}" \
 				"./cmd/$$bin"; \
 		done; \
+	done
+
+.PHONY: build-ctl-cross
+build-ctl-cross:
+	mkdir -p $(DIST_DIR)
+	@set -eu; \
+	for target in $(CTL_CROSS_TARGETS); do \
+		os="$${target%/*}"; arch="$${target#*/}"; ext=""; \
+		if [ "$$os" = "windows" ]; then ext=".exe"; fi; \
+		echo "building cicd-sensorctl $$os/$$arch"; \
+		CGO_ENABLED=0 GOOS=$$os GOARCH=$$arch $(GO) build $(GO_MOD_FLAG) \
+			-trimpath \
+			-buildvcs=false \
+			-ldflags "-s -w -X main.version=$(VERSION)" \
+			-o "$(DIST_DIR)/cicd-sensorctl_$${os}_$${arch}$${ext}" \
+			./cmd/cicd-sensorctl; \
 	done
 
 .PHONY: test
