@@ -17,11 +17,13 @@
 
 <hr>
 
-CI/CD jobs build, release, and deploy software — and increasingly manage production infrastructure through IaC. They run with cloud credentials, signing keys, and registry tokens, which makes the CI/CD Pipeline itself the prize. Recent supply chain incidents have shown that the attack path now runs *through* trusted developer tools — CI/CD Pipelines, package dependencies, container images — and the malicious behavior happens **inside the job**: processes execute, files are read, connections are made, and the CI/CD Pipeline disappears before anyone sees it.
+CI/CD Pipelines build, release, and deploy software — and they hold the keys to do it: cloud credentials, signing keys, registry tokens. That makes them the prize.
 
-Open source runtime detection exists everywhere else — Falco for Kubernetes, Tracee and Tetragon for cloud workloads, Wazuh and OSQuery for endpoints. CI/CD runtime has nothing equivalent. Sigstore proves *where* an artifact was built, but not *what ran* during the build, what it touched, or where it connected — and that is exactly the evidence teams need to detect attacks and respond.
+Entering 2026, supply chain incidents are accelerating. Attackers slip *through* trusted CI/CD Pipelines, package dependencies, and container images, run **inside the job**, and disappear with the evidence when the CI/CD Pipeline ends.
 
-**cicd-sensor closes that gap.** eBPF inside the CI/CD Pipeline captures process, network, and file activity while the job is still alive, so the evidence outlives the CI/CD Pipeline — for real-time detection, incident response, and verifiable build records.
+Every other runtime has its open-source defender — Falco, Tetragon, Tracee, Wazuh, OSQuery. CI/CD runtime has nothing. Sigstore brought us cryptographic proof of *where* and *how* an artifact was built; the next piece — *what actually ran* during the build, what it touched, where it connected — is the runtime evidence defenders still need to detect attacks and respond.
+
+**That is the gap. cicd-sensor is built to close it** — using eBPF inside the CI/CD Pipeline to make runtime visible, detect attacks while they happen, and preserve the evidence teams need to respond.
 
 - For **Developers and SRE**, it detects suspicious activity during builds and releases and keeps runtime records and attestations that others can verify later.
 - For **Enterprise security teams**, it provides Job Result Logs, Detection Logs, and Runtime Telemetry Logs that support monitoring, incident response, and forensics.
@@ -48,10 +50,13 @@ jobs:
   <img src="docs/assets/demo.gif" alt="cicd-sensor GitHub Actions demo" width="100%">
 </p>
 
+> [!NOTE]
+> **About the author** — Built by [Hiroki Suezawa (rung)](https://www.suezawa.net), author of the [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), contributor to the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and early contributor to [OSC&R / pbom.dev](https://pbom.dev/). cicd-sensor is the runtime defender that work has been pointing to.
+
 ## Key features
 
 - **eBPF-powered observability** — observes process execution, network connections, and file access at the kernel level.
-- **CEL-based rule engine** — monitors CI/CD runtime events with YAML rules and CEL conditions.
+- **CEL-based rule engine** — monitors CI/CD runtime events with readable, flexible expressions.
 - **Correlation detection** — detects combinations of events such as credential access plus suspicious execution, instead of relying only on single events.
 - **Runtime security logs** — emits Job Result Logs, Detection Logs, and Runtime Telemetry Logs for real-time detection, triage, incident response, and forensics.
 - **Runtime report and attestation** — generates a graphical report and an in-toto compatible runtime-trace attestation predicate so teams can review and verify CI/CD runtime activity.
@@ -77,6 +82,9 @@ Linux kernel: 5.15 or later on `x86_64`, 6.1 or later on `aarch64`.
 - [Rules](https://cicd-sensor.github.io/user-guide/rules.html) — write detection, collection, and correlation rules.
 - [Logging](https://cicd-sensor.github.io/user-guide/logging.html) — log format delivered by the manager.
 - [Developer Guide](https://cicd-sensor.github.io/developer-guide/overview.html) — agent, eBPF runtime, manager, and rule engine internals.
+
+> [!NOTE]
+> **Author** — Built by [Hiroki Suezawa (rung)](https://www.suezawa.net), contributor to the [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and [OSC&R / pbom.dev](https://pbom.dev/). A personal open-source project — views are my own.
 
 ## License
 

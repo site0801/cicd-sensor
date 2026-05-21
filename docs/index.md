@@ -10,13 +10,20 @@
   cicd-sensor is currently in beta. Feedback, real-world testing, rule development, and validation in CI/CD environments are very welcome.
 </div>
 
-[cicd-sensor](https://github.com/cicd-sensor/cicd-sensor) is an open-source eBPF-powered CI/CD runtime security sensor for GitHub Actions and GitLab CI/CD.
-It observes CI/CD runtime behavior, detects attacks and suspicious activity during builds and releases, and leaves evidence that security teams can use for incident response and build verification.
+CI/CD Pipelines build, release, and deploy software — and they hold the keys to do it: cloud credentials, signing keys, registry tokens.
+That makes them the prize.
 
-CI/CD is no longer only a test runner. It is used to build, release, publish, and deploy software, and those jobs often hold powerful long-lived and short-lived credentials: cloud credentials, package registry tokens, release signing keys, and deployment secrets.
-cicd-sensor is a tool for defending that runtime.
-For Developers and SREs, it provides a way to detect suspicious activity during builds and releases and to keep runtime records and attestations that others can verify later.
-For Enterprise security teams, it provides Job Result Logs, Detection Logs, and Runtime Telemetry Logs that support monitoring, incident response, and forensics.
+Entering 2026, supply chain incidents are accelerating.
+Attackers slip *through* trusted CI/CD Pipelines, package dependencies, and container images, run **inside the job**, and disappear with the evidence when the CI/CD Pipeline ends.
+
+Every other runtime has its open-source defender — Falco, Tetragon, Tracee, Wazuh, OSQuery.
+CI/CD runtime has nothing.
+Sigstore brought us cryptographic proof of *where* and *how* an artifact was built; the next piece — *what actually ran* during the build, what it touched, where it connected — is the runtime evidence defenders still need to detect attacks and respond.
+
+**That is the gap. [cicd-sensor](https://github.com/cicd-sensor/cicd-sensor) is built to close it** — using eBPF inside the CI/CD Pipeline to make runtime visible, detect attacks while they happen, and preserve the evidence teams need to respond.
+
+- For **Developers and SRE**, it detects suspicious activity during builds and releases and keeps runtime records and attestations that others can verify later.
+- For **Enterprise security teams**, it provides Job Result Logs, Detection Logs, and Runtime Telemetry Logs that support monitoring, incident response, and forensics.
 
 ## Getting Started
 
@@ -42,42 +49,15 @@ For self-hosted runner fleets or GitLab CI/CD, choose a deployment path from the
   <img src="assets/demo.gif" alt="cicd-sensor GitHub Actions demo" width="100%" style="border: 1px solid #d0d7de; border-radius: 8px;">
 </div>
 
-## Motivation
-
-CI/CD is the runtime where software is built, released, deployed, and where Infrastructure as Code often manages production infrastructure.
-That makes CI/CD jobs high-value execution environments with powerful credentials available at runtime.
-
-Recent supply chain incidents changed the urgency of this problem.
-They showed that trusted developer tools, security scanners, GitHub Actions, package dependencies, and IDE extensions can become the execution path for credential theft inside developer and CI/CD environments.
-When a trusted tool is weaponized, the malicious behavior happens inside the job: processes execute, files are read, network connections are made, and credentials may be harvested before the runner disappears.
-
-cicd-sensor is developed by [Hiroki Suezawa (rung)](https://www.suezawa.net).
-I have worked on CI/CD attacks and software supply chain security for more than five years.
-Through [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), review work on the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and early involvement in [OSC&R / pbom.dev](https://pbom.dev/), I have helped organize threat models and defensive requirements in this area.
-
-That work kept pointing to the same gap: CI/CD risks are better understood than before, but CI/CD runtime still lacks practical ways to detect attacks in real time and preserve the logs needed for response.
-Kubernetes has runtime security tools such as Falco, endpoints have EDR, and cloud workloads have mature detection and telemetry options.
-CI/CD jobs, however, are short-lived, and the evidence disappears quickly unless something records it while the job is running.
-
-Projects such as Sigstore have made major progress in proving where an artifact was built.
-But if malicious behavior happened during the build runtime, teams still need evidence of what actually ran, what it touched, and where it connected.
-That evidence is still hard to get from CI/CD systems today.
-
-cicd-sensor exists to close that gap: to make CI/CD runtime visible, detect attacks while they happen, and preserve the evidence needed for investigation.
-
-> Disclaimer: cicd-sensor is a personal open-source project. The views expressed here are my own and do not represent my employer.
-
-## Who It Helps
-
-| Audience | What cicd-sensor provides |
-| --- | --- |
-| Developers and SRE | A way to detect suspicious activity during builds and releases. Runtime records, connection information, and attestations can be reviewed later and used as verifiable build evidence. |
-| Enterprise security team | Three log streams for CI/CD Runtime Security: Job Result Log, Detection Log, and Runtime Telemetry Log. These give security teams a path from monitoring to incident response and forensics. |
+<div style="border-left: 4px solid #0f766e; background: #ecfdf5; padding: 0.9rem 1rem; margin: 1.5rem 0;">
+  <strong>About the author</strong><br>
+  Built by <a href="https://www.suezawa.net">Hiroki Suezawa (rung)</a>, author of the <a href="https://github.com/rung/threat-matrix-cicd">Common Threat Matrix for CI/CD Pipeline</a>, contributor to the <a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/">OWASP Top 10 CI/CD Security Risks</a>, and early contributor to <a href="https://pbom.dev/">OSC&amp;R / pbom.dev</a>. cicd-sensor is the runtime defender that work has been pointing to.
+</div>
 
 ## Key Features
 
 - **eBPF-powered observability**: observes process execution, network connections, and file access at the kernel level.
-- **CEL-based rule engine**: monitors CI/CD runtime events with YAML rules and CEL conditions.
+- **CEL-based rule engine**: monitors CI/CD runtime events with readable, flexible expressions.
 - **Correlation detection**: detects combinations of events, such as credential access plus suspicious execution, instead of relying only on single events.
 - **Runtime security logs**: provides Job Result Logs, Detection Logs, and Runtime Telemetry Logs for real-time detection, triage, incident response, and forensics.
 - **Runtime report and attestation**: generates a graphical report and an in-toto compatible runtime-trace attestation predicate so teams can review and verify CI/CD runtime activity.
@@ -87,9 +67,3 @@ cicd-sensor exists to close that gap: to make CI/CD runtime visible, detect atta
 
 cicd-sensor treats GitHub Actions and GitLab CI/CD as supported targets.
 For platform and runner environment status, see [Platform support](user-guide/overview.md#platform-support).
-
-## Next Steps
-
-- [User Guide](user-guide/overview.md): deploy cicd-sensor into CI/CD pipelines.
-- [Rules](user-guide/rules.md): write detection rules.
-- [Developer Guide](developer-guide/overview.md): understand the cicd-sensor implementation.
