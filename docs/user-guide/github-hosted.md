@@ -13,9 +13,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: cicd-sensor/cicd-sensor-action@fe377a3c0c6f1c495d5c11bd940c9cf8e0a9486b # v0.0.2
-
-      - name: Build
-        run: make test
 ```
 
 This action targets Linux GitHub-hosted VM runners.
@@ -97,9 +94,6 @@ jobs:
         with:
           manager-url: https://cicd-sensor-manager.example.com
           manager-token: ${{ secrets.CICD_SENSOR_MANAGER_TOKEN }}
-
-      - name: Build
-        run: make test
 ```
 
 ```mermaid
