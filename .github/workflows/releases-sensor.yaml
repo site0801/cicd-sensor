@@ -20,8 +20,23 @@ permissions:
   contents: read
 
 jobs:
+  # Run the same CI checks (lint, unit tests, build sanity) the
+  # branch sees on every PR / main push before any release artifact
+  # is produced.
+  ci:
+    name: CI gate
+    uses: ./.github/workflows/ci.yaml
+
+  # Real-kernel integration tests on multiple kernels. A release tag
+  # waits for this to succeed so we never publish binaries that fail
+  # the BPF verifier on a supported kernel.
+  bpf-integration:
+    name: BPF integration gate
+    uses: ./.github/workflows/bpf-cross-kernel.yaml
+
   build:
     name: Build release binaries
+    needs: [ci, bpf-integration]
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout

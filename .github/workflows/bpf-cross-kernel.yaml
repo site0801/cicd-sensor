@@ -3,6 +3,24 @@ name: BPF Cross-Kernel Integration
 
 "on":
   workflow_dispatch:
+  # Auto-run on main when Go (or BPF source) actually changes, so the
+  # cross-kernel verifier check covers every merge that could affect
+  # the loaded program bytes. PRs still rely on workflow_dispatch /
+  # the calling release workflow to avoid burning LVH minutes on
+  # every iteration.
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'vendor/**'
+      - 'internal/agent/bpf/**'
+      - 'Makefile'
+      - '.github/workflows/bpf-cross-kernel.yaml'
+  # Let release-sensor reuse this as an integration gate.
+  workflow_call:
 
 permissions:
   contents: read
