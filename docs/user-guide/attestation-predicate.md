@@ -137,35 +137,8 @@ cicd-sensor does not yet expose file evidence at the granularity expected by att
 
 ## Sign on GitHub Actions
 
-Use [`actions/attest`](https://github.com/actions/attest) with `predicate-type` and `predicate-path`.
-The predicate type should match the runtime-trace predicate that cicd-sensor is based on.
-
-```yaml
-jobs:
-  attest-runtime:
-    needs: build
-    runs-on: ubuntu-24.04
-    permissions:
-      id-token: write
-      contents: read
-      attestations: write
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-artifact
-          path: dist
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: cicd-sensor-attestation
-          path: cicd-sensor-attestation
-
-      - uses: actions/attest@v4
-        with:
-          subject-path: dist/my-app
-          predicate-type: https://in-toto.io/attestation/runtime-trace/v0.1
-          predicate-path: cicd-sensor-attestation/predicate.json
-```
+On GitHub Actions, [`actions/attest`](https://github.com/actions/attest) is the recommended way to attach this predicate to a signed GitHub Artifact Attestation.
+Use the generated `predicate.json` as a custom predicate, and set the predicate type to the runtime-trace predicate that cicd-sensor is based on.
 
 For container images, use `subject-name` and `subject-digest` instead of `subject-path`.
 Use `push-to-registry: true` when the attestation should also be pushed to the image registry.

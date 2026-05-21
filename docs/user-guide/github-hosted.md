@@ -12,8 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: cicd-sensor/cicd-sensor-action@v0.0.2
-      - uses: actions/checkout@v6
+      - uses: cicd-sensor/cicd-sensor-action@fe377a3c0c6f1c495d5c11bd940c9cf8e0a9486b # v0.0.2
 
       - name: Build
         run: make test
@@ -94,12 +93,10 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: cicd-sensor/cicd-sensor-action@v0.0.2
+      - uses: cicd-sensor/cicd-sensor-action@fe377a3c0c6f1c495d5c11bd940c9cf8e0a9486b # v0.0.2
         with:
           manager-url: https://cicd-sensor-manager.example.com
           manager-token: ${{ secrets.CICD_SENSOR_MANAGER_TOKEN }}
-
-      - uses: actions/checkout@v6
 
       - name: Build
         run: make test

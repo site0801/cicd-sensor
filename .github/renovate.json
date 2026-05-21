@@ -1,0 +1,69 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "dependencyDashboard": true,
+  "internalChecksFilter": "strict",
+  "labels": [
+    "dependencies"
+  ],
+  "minimumReleaseAge": "7 days",
+  "separateMajorMinor": false,
+  "separateMinorPatch": false,
+  "packageRules": [
+    {
+      "description": "Group Go module updates",
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "go dependencies",
+      "postUpdateOptions": [
+        "gomodTidy",
+        "gomodUpdateImportPaths"
+      ]
+    },
+    {
+      "description": "Group GitHub Actions workflow updates",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Group Dockerfile base image updates weekly before 1am UTC Tuesday / 10am JST Tuesday",
+      "matchManagers": [
+        "dockerfile"
+      ],
+      "groupName": "dockerfile base images",
+      "minimumReleaseAgeBehaviour": "timestamp-optional",
+      "schedule": [
+        "before 1am on tuesday"
+      ]
+    },
+    {
+      "description": "Update SHA-pinned GitHub Actions examples in README and docs after a 1 day cooldown",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "groupName": "github actions docs examples",
+      "minimumReleaseAge": "1 day"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^README\\.md$/",
+        "/^docs\\/.*\\.md$/"
+      ],
+      "matchStrings": [
+        "(?<indentation>\\s*)-\\s+uses:\\s+(?<packageName>[A-Za-z0-9_.-]+\\/[A-Za-z0-9_.-]+)(?<actionPath>\\/[A-Za-z0-9_./-]+)?@(?<currentDigest>[a-f0-9]{40})\\s+#\\s+(?<currentValue>v?\\d+(?:\\.\\d+){0,3})"
+      ],
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "semver-coerced",
+      "autoReplaceStringTemplate": "{{{indentation}}}- uses: {{{packageName}}}{{#if actionPath}}{{{actionPath}}}{{/if}}@{{#if newDigest}}{{{newDigest}}}{{else}}{{{currentDigest}}}{{/if}} # {{#if newValue}}{{{newValue}}}{{else}}{{{currentValue}}}{{/if}}"
+    }
+  ]
+}
