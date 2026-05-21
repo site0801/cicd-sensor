@@ -3,7 +3,7 @@
 # cicd-sensor-manager container image (Lambda adapter).
 #
 
-FROM public.ecr.aws/awsguru/aws-lambda-adapter:1.0.0 AS lambda-adapter
+FROM public.ecr.aws/awsguru/aws-lambda-adapter:1.0.0@sha256:b4da35991627bdac98a81c377d0cc28e6989687359576dfda9f0b64be835d648 AS lambda-adapter
 
 FROM --platform=${BUILDPLATFORM:-linux/amd64} cgr.dev/chainguard/go:latest@sha256:29c70d8bd05a956a07e880f8e00217172be765b36cdcd70ebe5c26a5ee9243c7 AS builder
 WORKDIR /src
