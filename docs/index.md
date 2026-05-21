@@ -51,7 +51,7 @@ For self-hosted runner fleets or GitLab CI/CD, choose a deployment path from the
 
 <div style="border-left: 4px solid #0f766e; background: #ecfdf5; padding: 0.9rem 1rem; margin: 1.5rem 0;">
   <strong>About the author</strong><br>
-  Built by <a href="https://www.suezawa.net">Hiroki Suezawa (rung)</a>, author of the <a href="https://github.com/rung/threat-matrix-cicd">Common Threat Matrix for CI/CD Pipeline</a>, contributor to the <a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/">OWASP Top 10 CI/CD Security Risks</a>, and early contributor to <a href="https://pbom.dev/">OSC&amp;R / pbom.dev</a>. cicd-sensor is the runtime defender that work has been pointing to.
+  Built by <a href="https://www.suezawa.net">Hiroki Suezawa (@rung)</a>, author of the <a href="https://github.com/rung/threat-matrix-cicd">Common Threat Matrix for CI/CD Pipeline</a>, contributor to the <a href="https://owasp.org/www-project-top-10-ci-cd-security-risks/">OWASP Top 10 CI/CD Security Risks</a>, and early contributor to <a href="https://pbom.dev/">OSC&amp;R / pbom.dev</a>. cicd-sensor is the runtime defender that work has been pointing to.
 </div>
 
 ## Key Features

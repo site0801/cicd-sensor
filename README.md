@@ -51,7 +51,7 @@ jobs:
 </p>
 
 > [!NOTE]
-> **About the author** — Built by [Hiroki Suezawa (rung)](https://www.suezawa.net), author of the [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), contributor to the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and early contributor to [OSC&R / pbom.dev](https://pbom.dev/). cicd-sensor is the runtime defender that work has been pointing to.
+> **About the author** — Built by [Hiroki Suezawa (@rung)](https://www.suezawa.net), author of the [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), contributor to the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and early contributor to [OSC&R / pbom.dev](https://pbom.dev/). cicd-sensor is the runtime defender that work has been pointing to.
 
 ## Key features
 
@@ -82,9 +82,6 @@ Linux kernel: 5.15 or later on `x86_64`, 6.1 or later on `aarch64`.
 - [Rules](https://cicd-sensor.github.io/user-guide/rules.html) — write detection, collection, and correlation rules.
 - [Logging](https://cicd-sensor.github.io/user-guide/logging.html) — log format delivered by the manager.
 - [Developer Guide](https://cicd-sensor.github.io/developer-guide/overview.html) — agent, eBPF runtime, manager, and rule engine internals.
-
-> [!NOTE]
-> **Author** — Built by [Hiroki Suezawa (rung)](https://www.suezawa.net), contributor to the [Common Threat Matrix for CI/CD Pipeline](https://github.com/rung/threat-matrix-cicd), the [OWASP Top 10 CI/CD Security Risks](https://owasp.org/www-project-top-10-ci-cd-security-risks/), and [OSC&R / pbom.dev](https://pbom.dev/). A personal open-source project — views are my own.
 
 ## License
 
