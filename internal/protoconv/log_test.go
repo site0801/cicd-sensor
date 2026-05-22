@@ -15,11 +15,11 @@ func TestToJobLogContext_GitHub(t *testing.T) {
 		CommitSHA:         "abc123",
 		RefName:           "main",
 		Trigger:           "push",
-		ActorName:         "octocat",
 		ActorID:           "1001",
-		GitHubWorkflow:    "CI",
+		ActorName:         "octocat",
 		GitHubWorkflowRef: "acme/example/.github/workflows/ci.yml@refs/heads/main",
 		GitHubWorkflowSHA: "def456",
+		GitHubWorkflow:    "CI",
 	}
 
 	got := ToJobLogContext(identity, metadata, "github-hosted")
@@ -35,11 +35,11 @@ func TestToJobLogContext_GitHub(t *testing.T) {
 		got.CommitSha != "abc123" ||
 		got.RefName != "main" ||
 		got.Trigger != "push" ||
-		got.ActorName != "octocat" ||
 		got.ActorId != "1001" ||
-		got.GithubWorkflow != "CI" ||
+		got.ActorName != "octocat" ||
 		got.GithubWorkflowRef != metadata.GitHubWorkflowRef ||
-		got.GithubWorkflowSha != "def456" {
+		got.GithubWorkflowSha != "def456" ||
+		got.GithubWorkflow != "CI" {
 		t.Fatalf("github log job context mismatch: %+v", got)
 	}
 }
@@ -69,8 +69,8 @@ func TestToJobLogContext_GitLab(t *testing.T) {
 		CommitSHA:          "abc",
 		RefName:            "main",
 		Trigger:            "push",
-		ActorName:          "rung",
 		ActorID:            "7393749",
+		ActorName:          "rung",
 		GitLabJobName:      "jirojiro-smoke",
 		GitLabConfigRefURI: "gitlab.com/group/project//.gitlab-ci.yml@refs/heads/main",
 	}
@@ -79,8 +79,8 @@ func TestToJobLogContext_GitLab(t *testing.T) {
 		got.GitlabJobId != "14274377073" ||
 		got.GitlabJobName != "jirojiro-smoke" ||
 		got.GitlabConfigRefUri != metadata.GitLabConfigRefURI ||
-		got.ActorName != "rung" ||
-		got.ActorId != "7393749" {
+		got.ActorId != "7393749" ||
+		got.ActorName != "rung" {
 		t.Fatalf("gitlab log job context mismatch: %+v", got)
 	}
 }
@@ -97,7 +97,7 @@ func TestToJobLogContext_GitLabJSONOmitsGitHubFields(t *testing.T) {
 	if err := json.Unmarshal(data, &raw); err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
-	for _, key := range []string{"github_run_id", "github_job", "github_run_attempt", "github_runner_tracking_id", "github_workflow", "github_workflow_ref", "github_workflow_sha"} {
+	for _, key := range []string{"github_run_id", "github_job", "github_run_attempt", "github_runner_tracking_id", "github_workflow_ref", "github_workflow_sha", "github_workflow"} {
 		if _, present := raw[key]; present {
 			t.Errorf("gitlab job log should omit %q, but it was present: %s", key, data)
 		}

@@ -7,13 +7,13 @@ type JobMetadata struct {
 	CommitSHA string `json:"commit_sha,omitempty"`
 	RefName   string `json:"ref_name,omitempty"`
 	Trigger   string `json:"trigger,omitempty"`
-	ActorName string `json:"actor_name,omitempty"`
 	ActorID   string `json:"actor_id,omitempty"`
+	ActorName string `json:"actor_name,omitempty"`
 
 	// GitHub only.
-	GitHubWorkflow    string `json:"github_workflow,omitempty"`
 	GitHubWorkflowRef string `json:"github_workflow_ref,omitempty"`
 	GitHubWorkflowSHA string `json:"github_workflow_sha,omitempty"`
+	GitHubWorkflow    string `json:"github_workflow,omitempty"`
 
 	// GitLab only.
 	GitLabJobName      string `json:"gitlab_job_name,omitempty"`

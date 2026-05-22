@@ -203,8 +203,8 @@ func TestJobMetadataFromGitLabContainer(t *testing.T) {
 			CommitSHA:          "c4c41b82483929ffab3abae20b60dd9f793400ba",
 			RefName:            "main",
 			Trigger:            "push",
-			ActorName:          "rung",
 			ActorID:            "7393749",
+			ActorName:          "rung",
 			GitLabJobName:      "build",
 			GitLabConfigRefURI: "gitlab.com/group/project//.gitlab-ci.yml@refs/heads/main",
 		}

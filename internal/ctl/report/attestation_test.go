@@ -359,13 +359,13 @@ func TestAttestationPredicate_PreservesMetadata(t *testing.T) {
 
 	log := minimalLogForIdentity()
 	log.Metadata = jobcontext.JobMetadata{
-		GitHubWorkflow:    "release",
-		GitHubWorkflowRef: "refs/heads/main",
-		GitHubWorkflowSHA: "abc123",
-		RefName:           "main",
 		CommitSHA:         "def456",
+		RefName:           "main",
 		Trigger:           "push",
 		ActorName:         "alice",
+		GitHubWorkflowRef: "refs/heads/main",
+		GitHubWorkflowSHA: "abc123",
+		GitHubWorkflow:    "release",
 	}
 
 	got := renderAttestationJSON(t, log)

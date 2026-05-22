@@ -53,8 +53,8 @@ func TestBuildProjectStartRequest(t *testing.T) {
 				ProviderHost:     "github.com",
 				ProjectPath:      "acme/example",
 				GitHubRunID:      "123",
-				GitHubRunAttempt: "1",
 				GitHubJob:        "build",
+				GitHubRunAttempt: "1",
 			},
 			wantErrText: "github-runner-tracking-id is required",
 		},
@@ -144,11 +144,11 @@ func TestBuildProjectStartRequest_IncludesNestedMetadata(t *testing.T) {
 		CommitSHA:         "abc123",
 		RefName:           "main",
 		Trigger:           "push",
-		ActorName:         "alice",
 		ActorID:           "1001",
-		GitHubWorkflow:    "build",
+		ActorName:         "alice",
 		GitHubWorkflowRef: "acme/example/.github/workflows/build.yml@refs/heads/main",
 		GitHubWorkflowSHA: "def456",
+		GitHubWorkflow:    "build",
 	}, "", "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
@@ -161,11 +161,11 @@ func TestBuildProjectStartRequest_IncludesNestedMetadata(t *testing.T) {
 		"commit_sha":          "abc123",
 		"ref_name":            "main",
 		"trigger":             "push",
-		"actor_name":          "alice",
 		"actor_id":            "1001",
-		"github_workflow":     "build",
+		"actor_name":          "alice",
 		"github_workflow_ref": "acme/example/.github/workflows/build.yml@refs/heads/main",
 		"github_workflow_sha": "def456",
+		"github_workflow":     "build",
 	}
 	for key, wantValue := range want {
 		if metadata[key] != wantValue {
@@ -400,8 +400,8 @@ func githubIdentity() jobIdentityFlags {
 		ProviderHost:           "github.com",
 		ProjectPath:            "acme/example",
 		GitHubRunID:            "123",
-		GitHubRunAttempt:       "2",
 		GitHubJob:              "build",
+		GitHubRunAttempt:       "2",
 		GitHubRunnerTrackingID: "runner-1",
 	}
 }

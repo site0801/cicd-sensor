@@ -20,8 +20,8 @@ func ToJobLogContext(identity jobcontext.JobIdentity, metadata jobcontext.JobMet
 		CommitSha:    metadata.CommitSHA,
 		RefName:      metadata.RefName,
 		Trigger:      metadata.Trigger,
-		ActorName:    metadata.ActorName,
 		ActorId:      metadata.ActorID,
+		ActorName:    metadata.ActorName,
 	}
 	switch identity.Provider {
 	case jobcontext.ProviderGitHub:
@@ -29,9 +29,9 @@ func ToJobLogContext(identity jobcontext.JobIdentity, metadata jobcontext.JobMet
 		out.GithubJob = identity.GitHubJob
 		out.GithubRunAttempt = identity.GitHubRunAttempt
 		out.GithubRunnerTrackingId = identity.GitHubRunnerTrackingID
-		out.GithubWorkflow = metadata.GitHubWorkflow
 		out.GithubWorkflowRef = metadata.GitHubWorkflowRef
 		out.GithubWorkflowSha = metadata.GitHubWorkflowSHA
+		out.GithubWorkflow = metadata.GitHubWorkflow
 	case jobcontext.ProviderGitLab:
 		out.GitlabJobId = identity.GitLabJobID
 		out.GitlabJobName = metadata.GitLabJobName

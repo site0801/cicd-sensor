@@ -27,8 +27,14 @@ Every log entry includes context that identifies the job.
 | `job_link` | Job URL in the provider |
 | `commit_sha` | Target commit |
 | `ref_name` | Branch or tag |
-| `workflow_name` | Workflow or pipeline name |
-| `actor` | Actor that started the job |
+| `trigger` | CI event or trigger |
+| `actor_id` | Provider actor ID |
+| `actor_name` | Provider actor name |
+| `github_workflow_ref` | GitHub Actions workflow file ref |
+| `github_workflow_sha` | GitHub Actions workflow file commit SHA |
+| `github_workflow` | GitHub Actions workflow name |
+| `gitlab_job_name` | GitLab CI job name |
+| `gitlab_config_ref_uri` | GitLab CI config provenance URI |
 
 Each log entry also includes `log_id`, `timestamp`, `scope`, and `config_revision`.
 `log_id` is a UUID(v7) for each log row.

@@ -393,13 +393,14 @@ func TestRender_EscapesUntrustedReportData(t *testing.T) {
 		JobIdentity: jobcontext.GitHubJobIdentity(
 			"github.com", "acme/"+breakout, "run-"+breakout, "job", "1", "runner",
 		),
-		Metadata: jobcontext.JobMetadata{CommitSHA: breakout,
+		Metadata: jobcontext.JobMetadata{
+			CommitSHA:         breakout,
 			RefName:           commentBreakout,
 			Trigger:           lineSeparators,
-			GitHubWorkflow:    `workflow "quoted"`,
+			ActorName:         `attacker@example.com`,
 			GitHubWorkflowRef: `refs/heads/feature<script>`,
 			GitHubWorkflowSHA: `sha&value`,
-			ActorName:         `attacker@example.com`,
+			GitHubWorkflow:    `workflow "quoted"`,
 		},
 		ResultSummary: resultdoc.ResultSummary{Result: resultdoc.ResultDetected, HitsCount: 1},
 		NetworkConnections: []resultdoc.NetworkConnection{{

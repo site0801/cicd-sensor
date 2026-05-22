@@ -113,8 +113,8 @@ func TestBuildJobIdentityRequest(t *testing.T) {
 				ProviderHost:     "github.com",
 				ProjectPath:      "acme/example",
 				GitHubRunID:      "123",
-				GitHubRunAttempt: "2",
 				GitHubJob:        "build",
+				GitHubRunAttempt: "2",
 			},
 			wantErrText: "github-runner-tracking-id is required",
 		},
@@ -316,10 +316,11 @@ func TestBuildHostStartMetadataUsesGitHubEnvFallback(t *testing.T) {
 		"commit_sha":          "abc123",
 		"ref_name":            "main",
 		"trigger":             "push",
+		"actor_id":            "1001",
 		"actor_name":          "octocat",
-		"github_workflow":     "ci",
 		"github_workflow_ref": "env/repo/.github/workflows/ci.yml@refs/heads/main",
 		"github_workflow_sha": "def456",
+		"github_workflow":     "ci",
 	}
 	for key, value := range want {
 		if got[key] != value {
@@ -349,7 +350,6 @@ func TestGitHubEnvFallbackDoesNotOverrideFlags(t *testing.T) {
 
 func TestGitHubLifecycleUsageShowsEnvAsPrimaryInput(t *testing.T) {
 	tests := map[string][]string{
-		"host start": {"host", "start", "-h"},
 		"host end":   {"host", "end", "-h"},
 		"job health": {"job", "health", "-h"},
 	}
@@ -369,6 +369,40 @@ func TestGitHubLifecycleUsageShowsEnvAsPrimaryInput(t *testing.T) {
 			}
 			if strings.Contains(got, "Required:") {
 				t.Fatalf("usage should not present GitHub identity as required flags:\n%s", got)
+			}
+		})
+	}
+}
+
+func TestStartUsageShowsRequiredIdentityAndOptionalMetadata(t *testing.T) {
+	tests := map[string][]string{
+		"host start":    {"host", "start", "-h"},
+		"project start": {"project", "start", "-h"},
+	}
+
+	for name, args := range tests {
+		t.Run(name, func(t *testing.T) {
+			got := runCICDSensorHelp(t, args...)
+			for _, want := range []string{
+				"Required identity fields (flags or GitHub environment):",
+				"Optional metadata fields:",
+				"--ref-name",
+				"--actor-id",
+				"--actor-name",
+				"--github-workflow-ref",
+				"--github-workflow-sha",
+				"--github-workflow",
+				"--gitlab-job-name",
+				"--gitlab-config-ref-uri",
+			} {
+				if !strings.Contains(got, want) {
+					t.Fatalf("usage missing %q:\n%s", want, got)
+				}
+			}
+			for _, old := range []string{"--branch NAME", "--actor NAME", "--workflow NAME", "--workflow-ref REF", "--workflow-sha SHA"} {
+				if strings.Contains(got, old) {
+					t.Fatalf("usage contains old flag %q:\n%s", old, got)
+				}
 			}
 		})
 	}
@@ -454,4 +488,5 @@ func setGitHubMetadataEnv(t *testing.T) {
 	t.Setenv("GITHUB_WORKFLOW_REF", "env/repo/.github/workflows/ci.yml@refs/heads/main")
 	t.Setenv("GITHUB_WORKFLOW_SHA", "def456")
 	t.Setenv("GITHUB_ACTOR", "octocat")
+	t.Setenv("GITHUB_ACTOR_ID", "1001")
 }

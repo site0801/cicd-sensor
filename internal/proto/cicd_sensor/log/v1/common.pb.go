@@ -31,10 +31,8 @@ type JobLogContext struct {
 	CommitSha    string                 `protobuf:"bytes,6,opt,name=commit_sha,proto3" json:"commit_sha,omitempty"`
 	RefName      string                 `protobuf:"bytes,7,opt,name=ref_name,proto3" json:"ref_name,omitempty"`
 	Trigger      string                 `protobuf:"bytes,8,opt,name=trigger,proto3" json:"trigger,omitempty"`
-	// Pre-release breaking change: field 9 was workflow_name (moved to
-	// github_workflow); field 10 was actor (renamed to actor_name).
-	ActorId   string `protobuf:"bytes,9,opt,name=actor_id,proto3" json:"actor_id,omitempty"`
-	ActorName string `protobuf:"bytes,10,opt,name=actor_name,proto3" json:"actor_name,omitempty"`
+	ActorId      string                 `protobuf:"bytes,9,opt,name=actor_id,proto3" json:"actor_id,omitempty"`
+	ActorName    string                 `protobuf:"bytes,10,opt,name=actor_name,proto3" json:"actor_name,omitempty"`
 	// GitHub only.
 	GithubRunId            string `protobuf:"bytes,20,opt,name=github_run_id,proto3" json:"github_run_id,omitempty"`
 	GithubJob              string `protobuf:"bytes,21,opt,name=github_job,proto3" json:"github_job,omitempty"`

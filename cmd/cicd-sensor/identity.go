@@ -24,13 +24,13 @@ type jobMetadataFlags struct {
 	CommitSHA string
 	RefName   string
 	Trigger   string
-	ActorName string
 	ActorID   string
+	ActorName string
 
 	// GitHub only.
-	GitHubWorkflow    string
 	GitHubWorkflowRef string
 	GitHubWorkflowSHA string
+	GitHubWorkflow    string
 
 	// GitLab only.
 	GitLabJobName      string
@@ -42,21 +42,21 @@ func registerJobIdentityFlags(fs *flag.FlagSet, identity *jobIdentityFlags) {
 	fs.StringVar(&identity.ProviderHost, "provider-host", "", "Normalized CI provider host.")
 	fs.StringVar(&identity.ProjectPath, "project-path", "", "Provider project path (e.g. acme/example).")
 	fs.StringVar(&identity.GitHubRunID, "github-run-id", "", "GitHub Actions run ID.")
+	fs.StringVar(&identity.GitHubJob, "github-job", "", "GitHub Actions job id/key (GITHUB_JOB).")
 	fs.StringVar(&identity.GitHubRunAttempt, "github-run-attempt", "", "GitHub Actions run attempt.")
-	fs.StringVar(&identity.GitHubJob, "github-job", "", "GitHub Actions job name.")
 	fs.StringVar(&identity.GitHubRunnerTrackingID, "github-runner-tracking-id", "", "GitHub runner tracking ID.")
-	fs.StringVar(&identity.GitLabJobID, "gitlab-job-id", "", "GitLab CI job ID.")
+	fs.StringVar(&identity.GitLabJobID, "gitlab-job-id", "", "GitLab CI job execution ID (CI_JOB_ID).")
 }
 
 func registerJobMetadataFlags(fs *flag.FlagSet, metadata *jobMetadataFlags) {
 	fs.StringVar(&metadata.CommitSHA, "commit-sha", "", "Commit SHA associated with this job.")
 	fs.StringVar(&metadata.RefName, "ref-name", "", "Branch or ref name associated with this job.")
 	fs.StringVar(&metadata.Trigger, "trigger", "", "CI event or trigger name associated with this job.")
-	fs.StringVar(&metadata.ActorName, "actor-name", "", "Login of the user that triggered this job.")
 	fs.StringVar(&metadata.ActorID, "actor-id", "", "Numeric ID of the user that triggered this job.")
-	fs.StringVar(&metadata.GitHubWorkflow, "github-workflow", "", "GitHub Actions workflow name.")
+	fs.StringVar(&metadata.ActorName, "actor-name", "", "Login of the user that triggered this job.")
 	fs.StringVar(&metadata.GitHubWorkflowRef, "github-workflow-ref", "", "GitHub Actions workflow file ref.")
 	fs.StringVar(&metadata.GitHubWorkflowSHA, "github-workflow-sha", "", "GitHub Actions workflow file commit SHA.")
+	fs.StringVar(&metadata.GitHubWorkflow, "github-workflow", "", "GitHub Actions workflow name.")
 	fs.StringVar(&metadata.GitLabJobName, "gitlab-job-name", "", "GitLab CI job name (CI_JOB_NAME).")
 	fs.StringVar(&metadata.GitLabConfigRefURI, "gitlab-config-ref-uri", "", "GitLab CI config file ref URI (CI_CONFIG_REF_URI).")
 }
@@ -69,19 +69,61 @@ func printGitHubIdentityEnvHelp(w io.Writer) {
 	fmt.Fprintln(w, "        Provider project path, e.g. acme/example.")
 	fmt.Fprintln(w, "  GITHUB_RUN_ID")
 	fmt.Fprintln(w, "        GitHub Actions run ID.")
+	fmt.Fprintln(w, "  GITHUB_JOB")
+	fmt.Fprintln(w, "        GitHub Actions job id/key.")
 	fmt.Fprintln(w, "  GITHUB_RUN_ATTEMPT")
 	fmt.Fprintln(w, "        GitHub Actions run attempt.")
-	fmt.Fprintln(w, "  GITHUB_JOB")
-	fmt.Fprintln(w, "        GitHub Actions job name.")
 	fmt.Fprintln(w, "  RUNNER_TRACKING_ID")
 	fmt.Fprintln(w, "        GitHub runner tracking ID.")
 }
 
 func printGitHubMetadataEnvHelp(w io.Writer) {
-	fmt.Fprintln(w, "GitHub metadata environment (used by host start; flags override):")
+	fmt.Fprintln(w, "GitHub metadata environment (used by start commands; flags override):")
 	fmt.Fprintln(w, "  GITHUB_SHA, GITHUB_REF_NAME, GITHUB_EVENT_NAME")
-	fmt.Fprintln(w, "  GITHUB_WORKFLOW, GITHUB_WORKFLOW_REF, GITHUB_WORKFLOW_SHA")
 	fmt.Fprintln(w, "  GITHUB_ACTOR, GITHUB_ACTOR_ID")
+	fmt.Fprintln(w, "  GITHUB_WORKFLOW_REF, GITHUB_WORKFLOW_SHA, GITHUB_WORKFLOW")
+}
+
+func printRequiredIdentityFlagsHelp(w io.Writer, providerLine string) {
+	fmt.Fprintln(w, "Required identity fields (flags or GitHub environment):")
+	fmt.Fprintln(w, "  --provider github")
+	fmt.Fprintln(w, "        "+providerLine)
+	fmt.Fprintln(w, "  --provider-host HOST")
+	fmt.Fprintln(w, "        Normalized CI provider host.")
+	fmt.Fprintln(w, "  --project-path PATH")
+	fmt.Fprintln(w, "        Provider project path, e.g. acme/example.")
+	fmt.Fprintln(w, "  --github-run-id ID")
+	fmt.Fprintln(w, "        GitHub Actions run ID.")
+	fmt.Fprintln(w, "  --github-job NAME")
+	fmt.Fprintln(w, "        GitHub Actions job id/key (GITHUB_JOB).")
+	fmt.Fprintln(w, "  --github-run-attempt N")
+	fmt.Fprintln(w, "        GitHub Actions run attempt.")
+	fmt.Fprintln(w, "  --github-runner-tracking-id ID")
+	fmt.Fprintln(w, "        GitHub runner tracking ID.")
+}
+
+func printOptionalMetadataFlagsHelp(w io.Writer) {
+	fmt.Fprintln(w, "Optional metadata fields:")
+	fmt.Fprintln(w, "  --commit-sha SHA")
+	fmt.Fprintln(w, "        Commit SHA associated with this job.")
+	fmt.Fprintln(w, "  --ref-name NAME")
+	fmt.Fprintln(w, "        Branch, tag, or ref name associated with this job.")
+	fmt.Fprintln(w, "  --trigger NAME")
+	fmt.Fprintln(w, "        CI event or trigger name associated with this job.")
+	fmt.Fprintln(w, "  --actor-id ID")
+	fmt.Fprintln(w, "        Numeric ID of the user that triggered this job.")
+	fmt.Fprintln(w, "  --actor-name NAME")
+	fmt.Fprintln(w, "        Login of the user that triggered this job.")
+	fmt.Fprintln(w, "  --github-workflow-ref REF")
+	fmt.Fprintln(w, "        GitHub Actions workflow file ref.")
+	fmt.Fprintln(w, "  --github-workflow-sha SHA")
+	fmt.Fprintln(w, "        GitHub Actions workflow file commit SHA.")
+	fmt.Fprintln(w, "  --github-workflow NAME")
+	fmt.Fprintln(w, "        GitHub Actions workflow name.")
+	fmt.Fprintln(w, "  --gitlab-job-name NAME")
+	fmt.Fprintln(w, "        GitLab CI job name (CI_JOB_NAME).")
+	fmt.Fprintln(w, "  --gitlab-config-ref-uri URI")
+	fmt.Fprintln(w, "        GitLab CI config provenance URI (CI_CONFIG_REF_URI).")
 }
 
 func applyGitHubEnvFallback(identity *jobIdentityFlags) {
@@ -118,20 +160,20 @@ func applyGitHubMetadataEnvFallback(metadata *jobMetadataFlags) {
 	if metadata.Trigger == "" {
 		metadata.Trigger = os.Getenv("GITHUB_EVENT_NAME")
 	}
-	if metadata.ActorName == "" {
-		metadata.ActorName = os.Getenv("GITHUB_ACTOR")
-	}
 	if metadata.ActorID == "" {
 		metadata.ActorID = os.Getenv("GITHUB_ACTOR_ID")
 	}
-	if metadata.GitHubWorkflow == "" {
-		metadata.GitHubWorkflow = os.Getenv("GITHUB_WORKFLOW")
+	if metadata.ActorName == "" {
+		metadata.ActorName = os.Getenv("GITHUB_ACTOR")
 	}
 	if metadata.GitHubWorkflowRef == "" {
 		metadata.GitHubWorkflowRef = os.Getenv("GITHUB_WORKFLOW_REF")
 	}
 	if metadata.GitHubWorkflowSHA == "" {
 		metadata.GitHubWorkflowSHA = os.Getenv("GITHUB_WORKFLOW_SHA")
+	}
+	if metadata.GitHubWorkflow == "" {
+		metadata.GitHubWorkflow = os.Getenv("GITHUB_WORKFLOW")
 	}
 }
 
@@ -177,18 +219,18 @@ func buildJobIdentityRequest(identity jobIdentityFlags) (map[string]string, erro
 		if identity.GitHubRunID == "" {
 			return nil, fmt.Errorf("github-run-id is required")
 		}
-		if identity.GitHubRunAttempt == "" {
-			return nil, fmt.Errorf("github-run-attempt is required")
-		}
 		if identity.GitHubJob == "" {
 			return nil, fmt.Errorf("github-job is required")
+		}
+		if identity.GitHubRunAttempt == "" {
+			return nil, fmt.Errorf("github-run-attempt is required")
 		}
 		if identity.GitHubRunnerTrackingID == "" {
 			return nil, fmt.Errorf("github-runner-tracking-id is required")
 		}
 		req["github_run_id"] = identity.GitHubRunID
-		req["github_run_attempt"] = identity.GitHubRunAttempt
 		req["github_job"] = identity.GitHubJob
+		req["github_run_attempt"] = identity.GitHubRunAttempt
 		req["github_runner_tracking_id"] = identity.GitHubRunnerTrackingID
 	case "gitlab":
 		if identity.GitLabJobID == "" {
@@ -211,20 +253,20 @@ func buildJobMetadataRequest(metadata jobMetadataFlags) map[string]string {
 	if metadata.Trigger != "" {
 		req["trigger"] = metadata.Trigger
 	}
-	if metadata.ActorName != "" {
-		req["actor_name"] = metadata.ActorName
-	}
 	if metadata.ActorID != "" {
 		req["actor_id"] = metadata.ActorID
 	}
-	if metadata.GitHubWorkflow != "" {
-		req["github_workflow"] = metadata.GitHubWorkflow
+	if metadata.ActorName != "" {
+		req["actor_name"] = metadata.ActorName
 	}
 	if metadata.GitHubWorkflowRef != "" {
 		req["github_workflow_ref"] = metadata.GitHubWorkflowRef
 	}
 	if metadata.GitHubWorkflowSHA != "" {
 		req["github_workflow_sha"] = metadata.GitHubWorkflowSHA
+	}
+	if metadata.GitHubWorkflow != "" {
+		req["github_workflow"] = metadata.GitHubWorkflow
 	}
 	if metadata.GitLabJobName != "" {
 		req["gitlab_job_name"] = metadata.GitLabJobName
