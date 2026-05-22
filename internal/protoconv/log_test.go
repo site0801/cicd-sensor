@@ -1,7 +1,10 @@
 package protoconv
 
 import (
+	"encoding/json"
 	"testing"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
 )
@@ -9,13 +12,14 @@ import (
 func TestToJobLogContext_GitHub(t *testing.T) {
 	identity := jobcontext.GitHubJobIdentity("github.com", "acme/example", "25624771295", "build", "2", "runner-1")
 	metadata := jobcontext.JobMetadata{
-		CommitSHA:   "abc123",
-		Branch:      "main",
-		Trigger:     "push",
-		Workflow:    "CI",
-		WorkflowRef: "acme/example/.github/workflows/ci.yml@refs/heads/main",
-		WorkflowSHA: "def456",
-		Actor:       "octocat",
+		CommitSHA:         "abc123",
+		RefName:           "main",
+		Trigger:           "push",
+		ActorName:         "octocat",
+		ActorID:           "1001",
+		GitHubWorkflow:    "CI",
+		GitHubWorkflowRef: "acme/example/.github/workflows/ci.yml@refs/heads/main",
+		GitHubWorkflowSHA: "def456",
 	}
 
 	got := ToJobLogContext(identity, metadata, "github-hosted")
@@ -31,27 +35,72 @@ func TestToJobLogContext_GitHub(t *testing.T) {
 		got.CommitSha != "abc123" ||
 		got.RefName != "main" ||
 		got.Trigger != "push" ||
-		got.WorkflowName != "CI" ||
-		got.GithubWorkflowRef != metadata.WorkflowRef ||
-		got.GithubWorkflowSha != "def456" ||
-		got.Actor != "octocat" {
+		got.ActorName != "octocat" ||
+		got.ActorId != "1001" ||
+		got.GithubWorkflow != "CI" ||
+		got.GithubWorkflowRef != metadata.GitHubWorkflowRef ||
+		got.GithubWorkflowSha != "def456" {
 		t.Fatalf("github log job context mismatch: %+v", got)
 	}
 }
 
+// JSON marshal output must not leak gitlab_* keys into a GitHub job log.
+func TestToJobLogContext_GitHubJSONOmitsGitLabFields(t *testing.T) {
+	identity := jobcontext.GitHubJobIdentity("github.com", "acme/example", "25624771295", "build", "2", "runner-1")
+	ctx := ToJobLogContext(identity, jobcontext.JobMetadata{CommitSHA: "abc"}, "github-hosted")
+	data, err := (protojson.MarshalOptions{EmitDefaultValues: false}).Marshal(ctx)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	for _, key := range []string{"gitlab_job_id", "gitlab_job_name", "gitlab_config_ref_uri"} {
+		if _, present := raw[key]; present {
+			t.Errorf("github job log should omit %q, but it was present: %s", key, data)
+		}
+	}
+}
+
 func TestToJobLogContext_GitLab(t *testing.T) {
-	got := ToJobLogContext(
-		jobcontext.GitLabJobIdentity("gitlab.com", "group/project", "14274377073"),
-		jobcontext.JobMetadata{},
-		"gitlab-container",
-	)
+	identity := jobcontext.GitLabJobIdentity("gitlab.com", "group/project", "14274377073")
+	metadata := jobcontext.JobMetadata{
+		CommitSHA:          "abc",
+		RefName:            "main",
+		Trigger:            "push",
+		ActorName:          "rung",
+		ActorID:            "7393749",
+		GitLabJobName:      "jirojiro-smoke",
+		GitLabConfigRefURI: "gitlab.com/group/project//.gitlab-ci.yml@refs/heads/main",
+	}
+	got := ToJobLogContext(identity, metadata, "gitlab-container")
 	if got.Provider != "gitlab" ||
-		got.ProviderHost != "gitlab.com" ||
-		got.ProjectPath != "group/project" ||
-		got.JobLink != "https://gitlab.com/group/project/-/jobs/14274377073" ||
 		got.GitlabJobId != "14274377073" ||
-		got.RunnerKind != "gitlab-container" {
+		got.GitlabJobName != "jirojiro-smoke" ||
+		got.GitlabConfigRefUri != metadata.GitLabConfigRefURI ||
+		got.ActorName != "rung" ||
+		got.ActorId != "7393749" {
 		t.Fatalf("gitlab log job context mismatch: %+v", got)
+	}
+}
+
+// JSON marshal output must not leak github_* keys into a GitLab job log.
+func TestToJobLogContext_GitLabJSONOmitsGitHubFields(t *testing.T) {
+	identity := jobcontext.GitLabJobIdentity("gitlab.com", "group/project", "14274377073")
+	ctx := ToJobLogContext(identity, jobcontext.JobMetadata{CommitSHA: "abc"}, "gitlab-container")
+	data, err := (protojson.MarshalOptions{EmitDefaultValues: false}).Marshal(ctx)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	for _, key := range []string{"github_run_id", "github_job", "github_run_attempt", "github_runner_tracking_id", "github_workflow", "github_workflow_ref", "github_workflow_sha"} {
+		if _, present := raw[key]; present {
+			t.Errorf("gitlab job log should omit %q, but it was present: %s", key, data)
+		}
 	}
 }
 

@@ -777,10 +777,8 @@ func TestProxy_GitLab_LazyCreate(t *testing.T) {
 	}
 }
 
-// On a docker create that carries gitlab-runner job labels AND a populated
-// Env array, host_start must receive metadata derived from BOTH sources:
-// trusted fields (commit_sha, branch) from labels, low-trust fields
-// (trigger, workflow, actor) from env. Identity must still anchor on labels.
+// host_start receives metadata from labels (trusted) and env (best-effort),
+// with first-wins on env discarding `.gitlab-ci.yml variables:` spoof attempts.
 func TestProxy_GitLab_LazyCreate_PropagatesMetadata(t *testing.T) {
 	t.Parallel()
 
@@ -849,17 +847,71 @@ func TestProxy_GitLab_LazyCreate_PropagatesMetadata(t *testing.T) {
 			t.Fatalf("identity: got %+v, want %+v", got.JobIdentity, wantIdentity)
 		}
 		wantMetadata := jobcontext.JobMetadata{
-			CommitSHA: "c4c41b82483929ffab3abae20b60dd9f793400ba",
-			Branch:    "main",
-			Trigger:   "api",            // first-occurrence wins, not "web"
-			Workflow:  "jirojiro-smoke", // from CI_JOB_NAME
-			Actor:     "rung",           // first-occurrence wins, not "attacker"
+			CommitSHA:     "c4c41b82483929ffab3abae20b60dd9f793400ba",
+			RefName:       "main",
+			Trigger:       "api",            // first-occurrence wins, not "web"
+			ActorName:     "rung",           // first-occurrence wins, not "attacker"
+			GitLabJobName: "jirojiro-smoke", // from CI_JOB_NAME
 		}
 		if got.Metadata != wantMetadata {
 			t.Fatalf("metadata: got %+v, want %+v", got.Metadata, wantMetadata)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatalf("host_start not seen within 2s")
+	}
+}
+
+// cache-init carries labels but no env; the proxy must defer Job creation
+// to predefined/build so env-sourced metadata makes it into host_start.
+func TestProxy_GitLab_CacheInitSkipped(t *testing.T) {
+	t.Parallel()
+
+	const containerID = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+
+	labels := map[string]string{
+		gitLabRunnerJobURLLabel: "https://gitlab.com/group/project/-/jobs/14499483701",
+		gitLabRunnerJobIDLabel:  "14499483701",
+		gitLabRunnerJobSHALabel: "c4c41b82483929ffab3abae20b60dd9f793400ba",
+		gitLabRunnerJobRefLabel: "main",
+		gitLabRunnerTypeLabel:   "cache-init",
+	}
+
+	upstreamSocket := startUnixServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(t, w, http.StatusCreated, containerCreateResponse{ID: containerID})
+	}))
+
+	calls := make(chan string, 4)
+	agentSocket := startUnixServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls <- r.URL.Path
+		writeJSON(t, w, http.StatusOK, map[string]string{"status": "ok"})
+	}))
+
+	proxyClient := startProxyGitLab(t, upstreamSocket, agentSocket)
+	createBody, err := json.Marshal(map[string]any{"Image": "alpine", "Labels": labels})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	resp, err := proxyClient.Post("http://docker/v1.43/containers/create", "application/json", bytes.NewReader(createBody))
+	if err != nil {
+		t.Fatalf("proxy create: %v", err)
+	}
+	resp.Body.Close()
+
+	select {
+	case path := <-calls:
+		// staging without identity (peer_pid path) is acceptable; host_start is not.
+		if path == "/v1/gitlab/host/start" {
+			t.Fatalf("cache-init must not trigger host_start, but received call to %q", path)
+		}
+	case <-time.After(150 * time.Millisecond):
+		// No call is also acceptable — proxy may skip both staging and host_start.
+	}
+	select {
+	case path := <-calls:
+		if path == "/v1/gitlab/host/start" {
+			t.Fatalf("cache-init must not trigger host_start, but received call to %q", path)
+		}
+	case <-time.After(150 * time.Millisecond):
 	}
 }
 

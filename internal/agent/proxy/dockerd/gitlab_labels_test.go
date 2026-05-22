@@ -194,15 +194,19 @@ func TestJobMetadataFromGitLabContainer(t *testing.T) {
 		env := []string{
 			"CI_PIPELINE_SOURCE=push",
 			"CI_JOB_NAME=build",
+			"CI_CONFIG_REF_URI=gitlab.com/group/project//.gitlab-ci.yml@refs/heads/main",
 			"GITLAB_USER_LOGIN=rung",
+			"GITLAB_USER_ID=7393749",
 		}
 		got := jobMetadataFromGitLabContainer(labels, env)
 		want := jobcontext.JobMetadata{
-			CommitSHA: "c4c41b82483929ffab3abae20b60dd9f793400ba",
-			Branch:    "main",
-			Trigger:   "push",
-			Workflow:  "build",
-			Actor:     "rung",
+			CommitSHA:          "c4c41b82483929ffab3abae20b60dd9f793400ba",
+			RefName:            "main",
+			Trigger:            "push",
+			ActorName:          "rung",
+			ActorID:            "7393749",
+			GitLabJobName:      "build",
+			GitLabConfigRefURI: "gitlab.com/group/project//.gitlab-ci.yml@refs/heads/main",
 		}
 		if got != want {
 			t.Fatalf("metadata: got %+v, want %+v", got, want)
@@ -210,9 +214,6 @@ func TestJobMetadataFromGitLabContainer(t *testing.T) {
 	})
 
 	t.Run("first-wins resolves user-spoofed env duplicates to runner-set value", func(t *testing.T) {
-		// In observed runs, gitlab-runner emits predefined vars first and
-		// .gitlab-ci.yml `variables:` overrides are appended later. firstEnv
-		// must therefore return the FIRST occurrence so the trusted value wins.
 		env := []string{
 			"CI_PIPELINE_SOURCE=push",
 			"CI_PIPELINE_SOURCE=api", // hypothetical late-write spoof
@@ -223,8 +224,8 @@ func TestJobMetadataFromGitLabContainer(t *testing.T) {
 		if got.Trigger != "push" {
 			t.Fatalf("trigger: got %q, want first-occurrence %q", got.Trigger, "push")
 		}
-		if got.Actor != "rung" {
-			t.Fatalf("actor: got %q, want first-occurrence %q", got.Actor, "rung")
+		if got.ActorName != "rung" {
+			t.Fatalf("actor_name: got %q, want first-occurrence %q", got.ActorName, "rung")
 		}
 	})
 

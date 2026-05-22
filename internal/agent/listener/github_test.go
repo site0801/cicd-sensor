@@ -33,13 +33,13 @@ func TestListener_HostStart_SetsHostScope(t *testing.T) {
 		"github_run_attempt":        "1",
 		"github_runner_tracking_id": "github_tracking_host_scope",
 		"metadata": map[string]string{
-			"commit_sha":   "abc123",
-			"branch":       "main",
-			"trigger":      "push",
-			"workflow":     "build",
-			"workflow_ref": "acme/example/.github/workflows/build.yml@refs/heads/main",
-			"workflow_sha": "def456",
-			"actor":        "alice",
+			"commit_sha":          "abc123",
+			"ref_name":            "main",
+			"trigger":             "push",
+			"actor_name":          "alice",
+			"github_workflow":     "build",
+			"github_workflow_ref": "acme/example/.github/workflows/build.yml@refs/heads/main",
+			"github_workflow_sha": "def456",
 		},
 	})
 	resp, err := client.Post("http://cicd-sensor/v1/github/host/start", "application/json", bytes.NewReader(body))
@@ -69,8 +69,8 @@ func TestListener_HostStart_SetsHostScope(t *testing.T) {
 	if job.Metadata().CommitSHA != "abc123" {
 		t.Fatalf("job metadata commit_sha: got %q, want abc123", job.Metadata().CommitSHA)
 	}
-	if job.Metadata().WorkflowRef != "acme/example/.github/workflows/build.yml@refs/heads/main" {
-		t.Fatalf("job metadata workflow_ref: got %q", job.Metadata().WorkflowRef)
+	if job.Metadata().GitHubWorkflowRef != "acme/example/.github/workflows/build.yml@refs/heads/main" {
+		t.Fatalf("job metadata github_workflow_ref: got %q", job.Metadata().GitHubWorkflowRef)
 	}
 }
 

@@ -313,13 +313,13 @@ func TestBuildHostStartMetadataUsesGitHubEnvFallback(t *testing.T) {
 	applyGitHubMetadataEnvFallback(&metadata)
 	got := buildJobMetadataRequest(metadata)
 	want := map[string]string{
-		"commit_sha":   "abc123",
-		"branch":       "main",
-		"trigger":      "push",
-		"workflow":     "ci",
-		"workflow_ref": "env/repo/.github/workflows/ci.yml@refs/heads/main",
-		"workflow_sha": "def456",
-		"actor":        "octocat",
+		"commit_sha":          "abc123",
+		"ref_name":            "main",
+		"trigger":             "push",
+		"actor_name":          "octocat",
+		"github_workflow":     "ci",
+		"github_workflow_ref": "env/repo/.github/workflows/ci.yml@refs/heads/main",
+		"github_workflow_sha": "def456",
 	}
 	for key, value := range want {
 		if got[key] != value {

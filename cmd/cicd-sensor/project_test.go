@@ -141,13 +141,14 @@ func TestBuildProjectStartRequest_ZeroDefaultMaxAlertsIsUnset(t *testing.T) {
 
 func TestBuildProjectStartRequest_IncludesNestedMetadata(t *testing.T) {
 	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{
-		CommitSHA:   "abc123",
-		Branch:      "main",
-		Trigger:     "push",
-		Workflow:    "build",
-		WorkflowRef: "acme/example/.github/workflows/build.yml@refs/heads/main",
-		WorkflowSHA: "def456",
-		Actor:       "alice",
+		CommitSHA:         "abc123",
+		RefName:           "main",
+		Trigger:           "push",
+		ActorName:         "alice",
+		ActorID:           "1001",
+		GitHubWorkflow:    "build",
+		GitHubWorkflowRef: "acme/example/.github/workflows/build.yml@refs/heads/main",
+		GitHubWorkflowSHA: "def456",
 	}, "", "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
@@ -157,13 +158,14 @@ func TestBuildProjectStartRequest_IncludesNestedMetadata(t *testing.T) {
 		t.Fatalf("metadata: got %#v", got["metadata"])
 	}
 	want := map[string]string{
-		"commit_sha":   "abc123",
-		"branch":       "main",
-		"trigger":      "push",
-		"workflow":     "build",
-		"workflow_ref": "acme/example/.github/workflows/build.yml@refs/heads/main",
-		"workflow_sha": "def456",
-		"actor":        "alice",
+		"commit_sha":          "abc123",
+		"ref_name":            "main",
+		"trigger":             "push",
+		"actor_name":          "alice",
+		"actor_id":            "1001",
+		"github_workflow":     "build",
+		"github_workflow_ref": "acme/example/.github/workflows/build.yml@refs/heads/main",
+		"github_workflow_sha": "def456",
 	}
 	for key, wantValue := range want {
 		if metadata[key] != wantValue {

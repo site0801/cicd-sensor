@@ -19,12 +19,15 @@ func TestJobMetadata_OmitsEmptyOptionalFields(t *testing.T) {
 	}
 	for _, key := range []string{
 		"commit_sha",
-		"branch",
+		"ref_name",
 		"trigger",
-		"workflow",
-		"workflow_ref",
-		"workflow_sha",
-		"actor",
+		"actor_name",
+		"actor_id",
+		"github_workflow",
+		"github_workflow_ref",
+		"github_workflow_sha",
+		"gitlab_job_name",
+		"gitlab_config_ref_uri",
 	} {
 		if _, ok := raw[key]; ok {
 			t.Errorf("expected key %q to be omitted, but it was present", key)
@@ -34,13 +37,16 @@ func TestJobMetadata_OmitsEmptyOptionalFields(t *testing.T) {
 
 func TestJobMetadata_JSONRoundTrip(t *testing.T) {
 	input := jobcontext.JobMetadata{
-		CommitSHA:   "abc123",
-		Branch:      "main",
-		Trigger:     "push",
-		Workflow:    "build.yml",
-		WorkflowRef: "acme/example/.github/workflows/build.yml@refs/heads/main",
-		WorkflowSHA: "def456",
-		Actor:       "alice",
+		CommitSHA:          "abc123",
+		RefName:            "main",
+		Trigger:            "push",
+		ActorName:          "alice",
+		ActorID:            "1001",
+		GitHubWorkflow:     "build.yml",
+		GitHubWorkflowRef:  "acme/example/.github/workflows/build.yml@refs/heads/main",
+		GitHubWorkflowSHA:  "def456",
+		GitLabJobName:      "jirojiro-smoke",
+		GitLabConfigRefURI: "gitlab.com/acme/example//.gitlab-ci.yml@refs/heads/main",
 	}
 
 	data, err := json.Marshal(input)

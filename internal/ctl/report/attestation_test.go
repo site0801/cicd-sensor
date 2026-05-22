@@ -359,21 +359,21 @@ func TestAttestationPredicate_PreservesMetadata(t *testing.T) {
 
 	log := minimalLogForIdentity()
 	log.Metadata = jobcontext.JobMetadata{
-		Workflow:    "release",
-		WorkflowRef: "refs/heads/main",
-		WorkflowSHA: "abc123",
-		Branch:      "main",
-		CommitSHA:   "def456",
-		Trigger:     "push",
-		Actor:       "alice",
+		GitHubWorkflow:    "release",
+		GitHubWorkflowRef: "refs/heads/main",
+		GitHubWorkflowSHA: "abc123",
+		RefName:           "main",
+		CommitSHA:         "def456",
+		Trigger:           "push",
+		ActorName:         "alice",
 	}
 
 	got := renderAttestationJSON(t, log)
-	if got.MonitorLog.Metadata.Workflow != "release" {
-		t.Errorf("workflow: got %q, want %q", got.MonitorLog.Metadata.Workflow, "release")
+	if got.MonitorLog.Metadata.GitHubWorkflow != "release" {
+		t.Errorf("github_workflow: got %q, want %q", got.MonitorLog.Metadata.GitHubWorkflow, "release")
 	}
-	if got.MonitorLog.Metadata.Actor != "alice" {
-		t.Errorf("actor: got %q, want %q", got.MonitorLog.Metadata.Actor, "alice")
+	if got.MonitorLog.Metadata.ActorName != "alice" {
+		t.Errorf("actor_name: got %q, want %q", got.MonitorLog.Metadata.ActorName, "alice")
 	}
 	if got.MonitorLog.Metadata.CommitSHA != "def456" {
 		t.Errorf("commit_sha: got %q, want %q", got.MonitorLog.Metadata.CommitSHA, "def456")

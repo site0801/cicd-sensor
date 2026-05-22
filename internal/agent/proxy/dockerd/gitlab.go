@@ -17,14 +17,14 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
 )
 
-// gitlab-runner labels are the trust anchor: .gitlab-ci.yml `variables:` can
-// spoof CI_* env (we observe duplicate CI_JOB_ID etc. in container env) but
-// cannot override these labels.
+// gitlab-runner labels are the trust anchor: `.gitlab-ci.yml variables:`
+// can append spoofed CI_* env entries but cannot override these labels.
 const (
 	gitLabRunnerJobURLLabel = "com.gitlab.gitlab-runner.job.url"
 	gitLabRunnerJobIDLabel  = "com.gitlab.gitlab-runner.job.id"
 	gitLabRunnerJobSHALabel = "com.gitlab.gitlab-runner.job.sha"
 	gitLabRunnerJobRefLabel = "com.gitlab.gitlab-runner.job.ref"
+	gitLabRunnerTypeLabel   = "com.gitlab.gitlab-runner.type"
 )
 
 // containerCreateRequest is the docker create request slice this proxy peeks.
@@ -33,11 +33,12 @@ type containerCreateRequest struct {
 	Env    []string          `json:"Env"`
 }
 
-// gitlabIdentityCtxKey carries labels identity evidence to response handling.
-type gitlabIdentityCtxKey struct{}
+type gitlabRequestCtxKey struct{}
 
-// gitlabMetadataCtxKey carries label- and env-derived metadata to host_start.
-type gitlabMetadataCtxKey struct{}
+type gitlabRequestState struct {
+	identity jobcontext.JobIdentity
+	metadata jobcontext.JobMetadata
+}
 
 // errGitLabJobNotFound triggers host/start before one staging retry.
 var errGitLabJobNotFound = errors.New("gitlab job not found at agent")
@@ -75,15 +76,22 @@ func proxyHandlerGitLab(logger *slog.Logger, upstreamSocket, agentSocket string)
 				logger.WarnContext(req.Context(), "container_create_request_decode_failed", "error", err)
 				return
 			}
+			// cache-init helper containers carry job labels but no env, so
+			// letting them seed the Job would pin metadata to the label-only
+			// subset. Defer to the env-rich predefined/build containers.
+			if parsed.Labels[gitLabRunnerTypeLabel] == "cache-init" {
+				return
+			}
 			identity, err := jobIdentityFromGitLabLabels(parsed.Labels)
 			if err != nil {
 				// Helper containers may not carry job labels; peer_pid may still work.
 				return
 			}
-			metadata := jobMetadataFromGitLabContainer(parsed.Labels, parsed.Env)
-			ctx := context.WithValue(req.Context(), gitlabIdentityCtxKey{}, identity)
-			ctx = context.WithValue(ctx, gitlabMetadataCtxKey{}, metadata)
-			*req = *req.WithContext(ctx)
+			state := gitlabRequestState{
+				identity: identity,
+				metadata: jobMetadataFromGitLabContainer(parsed.Labels, parsed.Env),
+			}
+			*req = *req.WithContext(context.WithValue(req.Context(), gitlabRequestCtxKey{}, state))
 		},
 		Transport: transport,
 		ModifyResponse: func(resp *http.Response) error {
@@ -114,17 +122,16 @@ func proxyHandlerGitLab(logger *slog.Logger, upstreamSocket, agentSocket string)
 			}
 
 			peerPID, _ := resp.Request.Context().Value(peerPIDCtxKey{}).(int32)
-			identity, hasIdentity := resp.Request.Context().Value(gitlabIdentityCtxKey{}).(jobcontext.JobIdentity)
+			state, hasState := resp.Request.Context().Value(gitlabRequestCtxKey{}).(gitlabRequestState)
 			var identityPtr *jobcontext.JobIdentity
-			if hasIdentity {
-				identityPtr = &identity
+			if hasState {
+				identityPtr = &state.identity
 			}
-			metadata, _ := resp.Request.Context().Value(gitlabMetadataCtxKey{}).(jobcontext.JobMetadata)
 
 			basename := fmt.Sprintf("docker-%s.scope", parsed.ID)
 			ctx, cancel := context.WithTimeout(resp.Request.Context(), agentLazyCreateTimeout)
 			defer cancel()
-			if err := stageGitLabWithLazyCreate(ctx, agentSocket, basename, peerPID, identityPtr, metadata); err != nil {
+			if err := stageGitLabWithLazyCreate(ctx, agentSocket, basename, peerPID, identityPtr, state.metadata); err != nil {
 				logger.WarnContext(resp.Request.Context(), "staging_put_failed",
 					"error", err,
 					"basename", basename,
@@ -208,14 +215,14 @@ func postGitLabHostStart(ctx context.Context, agentSocket string, identity jobco
 	return nil
 }
 
-// jobMetadataFromGitLabContainer reads trusted fields from runner labels and
-// best-effort fields from env. .gitlab-ci.yml `variables:` cannot override
-// labels; first-wins on env discards spoofed duplicates (runner-set values
-// always appear before user-supplied ones in the create body's Env array).
+// jobMetadataFromGitLabContainer derives metadata from runner labels (trust
+// anchor) and container env (best-effort). First-occurrence wins on env so
+// runner-set values survive even when `.gitlab-ci.yml` `variables:` appends
+// spoofed duplicates.
 func jobMetadataFromGitLabContainer(labels map[string]string, env []string) jobcontext.JobMetadata {
 	metadata := jobcontext.JobMetadata{
 		CommitSHA: strings.TrimSpace(labels[gitLabRunnerJobSHALabel]),
-		Branch:    strings.TrimSpace(labels[gitLabRunnerJobRefLabel]),
+		RefName:   strings.TrimSpace(labels[gitLabRunnerJobRefLabel]),
 	}
 	for _, kv := range env {
 		eq := strings.IndexByte(kv, '=')
@@ -229,12 +236,20 @@ func jobMetadataFromGitLabContainer(labels map[string]string, env []string) jobc
 				metadata.Trigger = val
 			}
 		case "CI_JOB_NAME":
-			if metadata.Workflow == "" {
-				metadata.Workflow = val
+			if metadata.GitLabJobName == "" {
+				metadata.GitLabJobName = val
+			}
+		case "CI_CONFIG_REF_URI":
+			if metadata.GitLabConfigRefURI == "" {
+				metadata.GitLabConfigRefURI = val
 			}
 		case "GITLAB_USER_LOGIN":
-			if metadata.Actor == "" {
-				metadata.Actor = val
+			if metadata.ActorName == "" {
+				metadata.ActorName = val
+			}
+		case "GITLAB_USER_ID":
+			if metadata.ActorID == "" {
+				metadata.ActorID = val
 			}
 		}
 	}

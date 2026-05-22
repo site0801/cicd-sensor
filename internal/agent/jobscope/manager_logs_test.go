@@ -26,7 +26,7 @@ import (
 var (
 	testJobScopeLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
 	testJobIdentity    = jobcontext.GitHubJobIdentity("github.com", "acme/example", "123", "build", "1", "runner-1")
-	testJobMetadata    = jobcontext.JobMetadata{CommitSHA: "abc123", Branch: "main"}
+	testJobMetadata    = jobcontext.JobMetadata{CommitSHA: "abc123", RefName: "main"}
 	testEventTime      = time.Date(2026, 5, 12, 10, 0, 0, 0, time.UTC)
 )
 

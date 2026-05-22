@@ -9,7 +9,8 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
 )
 
-var logJSONMarshal = protojson.MarshalOptions{EmitDefaultValues: true}
+// Drops zero-valued fields so unset provider-specific keys disappear.
+var logJSONMarshal = protojson.MarshalOptions{EmitDefaultValues: false}
 
 type ScopeLogContext struct {
 	Identity       jobcontext.JobIdentity
