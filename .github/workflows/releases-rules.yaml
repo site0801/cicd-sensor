@@ -223,6 +223,7 @@ jobs:
           subject-name: ghcr.io/cicd-sensor/cicd-sensor-rules
           subject-digest: ${{ needs.publish.outputs.ghcr_digest }}
           push-to-registry: true
+          create-storage-record: true
 
       - name: Attest runtime-trace (GHCR image)
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
@@ -232,6 +233,7 @@ jobs:
           predicate-type: https://in-toto.io/attestation/runtime-trace/v0.1
           predicate-path: trace/predicate.json
           push-to-registry: true
+          create-storage-record: false
 
   finalize:
     name: Tag release
