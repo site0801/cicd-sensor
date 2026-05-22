@@ -15,6 +15,17 @@ For the GitLab CI/CD runner model, see [GitLab CI/CD self-hosted](gitlab-ci.md).
 - systemd.
 - dockerd.
 
+## Network requirements
+
+Allow outbound HTTPS from the Agent host to the Manager URL.
+
+| Destination | Purpose |
+| --- | --- |
+| Manager URL | Fetch config and rules, and send Job Result Logs, Detection Logs, and Runtime Telemetry Logs |
+
+When using Manager, the Agent does not connect directly to the public baseline rule registries or the host used to fetch Sigstore root certificates.
+The Manager fetches and verifies baseline rules.
+
 ## Install path
 
 cicd-sensor releases are available from [cicd-sensor/cicd-sensor releases](https://github.com/cicd-sensor/cicd-sensor/releases).

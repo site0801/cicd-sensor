@@ -62,8 +62,17 @@ Design HTTPS / TLS, authentication boundaries, and private network exposure with
 
 ## Network requirements
 
-The manager fetches the baseline rule bundle from public OCI registries (`ghcr.io`, `quay.io`, `registry.gitlab.com`).
-Allow outbound HTTPS to these hosts.
+Allow outbound HTTPS from the manager to the following hosts.
+
+| Host | Purpose |
+| --- | --- |
+| `ghcr.io` | Fetch baseline rule bundles |
+| `quay.io` | Fetch baseline rule bundles |
+| `registry.gitlab.com` | Fetch baseline rule bundles |
+| `tuf-repo-cdn.sigstore.dev` | Fetch the Sigstore root certificates used for baseline rule signature verification |
+
+When using Manager, Agents do not connect to these hosts directly.
+Agents connect to the Manager, and the Manager fetches and verifies baseline rules.
 
 ## Startup files
 

@@ -37,15 +37,3 @@ Regex, index access, arithmetic, and similar features are not allowed.
 This keeps detection rules readable and runtime evaluation predictable.
 
 The source of truth for event-kind fields is the User Guide [Event kinds](../user-guide/rule-event-kinds.md) and [CEL conditions](../user-guide/rule-cel-conditions.md) pages.
-
-## Correlation
-
-Correlation rules do not evaluate runtime events directly.
-They evaluate rule hit counts within the same RuleSet.
-
-```cel
-rule.suspicious_network_tool.total_count >= 1 &&
-rule.credential_file_read.total_count >= 1
-```
-
-The default design pattern is to keep broad primitive rules as `collect`, emit them to `job_detection_log`, and add a correlation rule that emits `detect` for the stronger combination.
