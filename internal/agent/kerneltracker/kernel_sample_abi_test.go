@@ -1,4 +1,4 @@
-//go:build kernel_sample_abi && linux
+//go:build linux
 
 package kerneltracker
 

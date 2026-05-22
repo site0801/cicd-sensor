@@ -105,10 +105,6 @@ test:
 bench-cel:
 	$(GO) test $(GO_MOD_FLAG) -bench='BenchmarkEvaluate' -run='^$$' -benchmem ./internal/agent/evaluation
 
-.PHONY: test-abi
-test-abi:
-	$(GO) test $(GO_MOD_FLAG) -tags kernel_sample_abi -count=1 ./internal/agent/kerneltracker/...
-
 .PHONY: integration
 integration:
 	$(GO) test $(GO_MOD_FLAG) -tags integration -count=1 ./...
@@ -147,7 +143,7 @@ diff-check:
 	git diff --exit-code
 
 .PHONY: check
-check: generate test test-abi rules-validate rules-bundle-validate diff-check
+check: generate test rules-validate rules-bundle-validate diff-check
 
 .PHONY: clean
 clean:
