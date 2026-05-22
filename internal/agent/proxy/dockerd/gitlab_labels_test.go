@@ -182,3 +182,63 @@ func TestJobIdentityFromGitLabRunnerLabels(t *testing.T) {
 		})
 	}
 }
+
+func TestJobMetadataFromGitLabContainer(t *testing.T) {
+	t.Parallel()
+
+	t.Run("labels supply identity-anchored metadata; env supplies low-trust fields", func(t *testing.T) {
+		labels := map[string]string{
+			gitLabRunnerJobSHALabel: "c4c41b82483929ffab3abae20b60dd9f793400ba",
+			gitLabRunnerJobRefLabel: "main",
+		}
+		env := []string{
+			"CI_PIPELINE_SOURCE=push",
+			"CI_JOB_NAME=build",
+			"GITLAB_USER_LOGIN=rung",
+		}
+		got := jobMetadataFromGitLabContainer(labels, env)
+		want := jobcontext.JobMetadata{
+			CommitSHA: "c4c41b82483929ffab3abae20b60dd9f793400ba",
+			Branch:    "main",
+			Trigger:   "push",
+			Workflow:  "build",
+			Actor:     "rung",
+		}
+		if got != want {
+			t.Fatalf("metadata: got %+v, want %+v", got, want)
+		}
+	})
+
+	t.Run("first-wins resolves user-spoofed env duplicates to runner-set value", func(t *testing.T) {
+		// In observed runs, gitlab-runner emits predefined vars first and
+		// .gitlab-ci.yml `variables:` overrides are appended later. firstEnv
+		// must therefore return the FIRST occurrence so the trusted value wins.
+		env := []string{
+			"CI_PIPELINE_SOURCE=push",
+			"CI_PIPELINE_SOURCE=api", // hypothetical late-write spoof
+			"GITLAB_USER_LOGIN=rung",
+			"GITLAB_USER_LOGIN=attacker",
+		}
+		got := jobMetadataFromGitLabContainer(nil, env)
+		if got.Trigger != "push" {
+			t.Fatalf("trigger: got %q, want first-occurrence %q", got.Trigger, "push")
+		}
+		if got.Actor != "rung" {
+			t.Fatalf("actor: got %q, want first-occurrence %q", got.Actor, "rung")
+		}
+	})
+
+	t.Run("missing labels and env yield zero metadata, not error", func(t *testing.T) {
+		got := jobMetadataFromGitLabContainer(nil, nil)
+		if (got != jobcontext.JobMetadata{}) {
+			t.Fatalf("expected zero metadata, got %+v", got)
+		}
+	})
+
+	t.Run("malformed env entries are skipped without panic", func(t *testing.T) {
+		env := []string{"=novalue", "noequals", "", "CI_PIPELINE_SOURCE=schedule"}
+		if got := jobMetadataFromGitLabContainer(nil, env); got.Trigger != "schedule" {
+			t.Fatalf("trigger after malformed entries: got %q, want %q", got.Trigger, "schedule")
+		}
+	})
+}

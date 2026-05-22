@@ -777,6 +777,92 @@ func TestProxy_GitLab_LazyCreate(t *testing.T) {
 	}
 }
 
+// On a docker create that carries gitlab-runner job labels AND a populated
+// Env array, host_start must receive metadata derived from BOTH sources:
+// trusted fields (commit_sha, branch) from labels, low-trust fields
+// (trigger, workflow, actor) from env. Identity must still anchor on labels.
+func TestProxy_GitLab_LazyCreate_PropagatesMetadata(t *testing.T) {
+	t.Parallel()
+
+	const containerID = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	labels := map[string]string{
+		gitLabRunnerJobURLLabel: "https://gitlab.com/rung/girogiro-testing/-/jobs/14499483701",
+		gitLabRunnerJobIDLabel:  "14499483701",
+		gitLabRunnerJobSHALabel: "c4c41b82483929ffab3abae20b60dd9f793400ba",
+		gitLabRunnerJobRefLabel: "main",
+	}
+	env := []string{
+		// gitlab-runner-injected predefined vars (these come first).
+		"CI_PIPELINE_SOURCE=api",
+		"CI_JOB_NAME=jirojiro-smoke",
+		"GITLAB_USER_LOGIN=rung",
+		// User-spoofed .gitlab-ci.yml `variables:` overrides (come later).
+		// host_start metadata must NOT pick these up (first-wins).
+		"CI_PIPELINE_SOURCE=web",
+		"GITLAB_USER_LOGIN=attacker",
+	}
+
+	upstreamSocket := startUnixServer(t, http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		writeJSON(t, w, http.StatusCreated, containerCreateResponse{ID: containerID})
+	}))
+
+	hostStartReq := make(chan jobcontext.GitLabHostStartRequest, 1)
+	stagingSeen := 0
+	agentSocket := startUnixServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/gitlab/staging/put":
+			stagingSeen++
+			if stagingSeen == 1 {
+				writeJSON(t, w, http.StatusNotFound, map[string]string{"error": "job_not_found"})
+				return
+			}
+			writeJSON(t, w, http.StatusOK, map[string]string{"status": "staged"})
+		case "/v1/gitlab/host/start":
+			body, _ := io.ReadAll(r.Body)
+			var req jobcontext.GitLabHostStartRequest
+			if err := json.Unmarshal(body, &req); err != nil {
+				t.Errorf("decode host_start body: %v", err)
+			}
+			hostStartReq <- req
+			writeJSON(t, w, http.StatusOK, map[string]string{"status": "ok"})
+		default:
+			t.Errorf("unexpected agent path: %q", r.URL.Path)
+		}
+	}))
+
+	proxyClient := startProxyGitLab(t, upstreamSocket, agentSocket)
+	createBody, err := json.Marshal(map[string]any{"Image": "alpine", "Labels": labels, "Env": env})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	resp, err := proxyClient.Post("http://docker/v1.43/containers/create", "application/json", bytes.NewReader(createBody))
+	if err != nil {
+		t.Fatalf("proxy create: %v", err)
+	}
+	resp.Body.Close()
+
+	select {
+	case got := <-hostStartReq:
+		wantIdentity := jobcontext.GitLabJobIdentity("gitlab.com", "rung/girogiro-testing", "14499483701")
+		if got.JobIdentity != wantIdentity {
+			t.Fatalf("identity: got %+v, want %+v", got.JobIdentity, wantIdentity)
+		}
+		wantMetadata := jobcontext.JobMetadata{
+			CommitSHA: "c4c41b82483929ffab3abae20b60dd9f793400ba",
+			Branch:    "main",
+			Trigger:   "api",            // first-occurrence wins, not "web"
+			Workflow:  "jirojiro-smoke", // from CI_JOB_NAME
+			Actor:     "rung",           // first-occurrence wins, not "attacker"
+		}
+		if got.Metadata != wantMetadata {
+			t.Fatalf("metadata: got %+v, want %+v", got.Metadata, wantMetadata)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("host_start not seen within 2s")
+	}
+}
+
 // Multiple concurrent containers/create for the same identity must each
 // complete the lazy-create flow successfully. The agent fake here simulates
 // the JobRegistry per-identity barrier: staging/put returns 404 until
