@@ -11,6 +11,7 @@ import (
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/proxy/dockerd"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	"github.com/cicd-sensor/cicd-sensor/internal/slogid"
 )
 
 const proxyUsage = `usage:
@@ -72,7 +73,7 @@ func runProxyDockerdSubcommand(args []string) {
 		os.Exit(1)
 	}
 
-	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil)).With("component", "cicd-sensor-docker-proxy")
+	logger := slog.New(slogid.Wrap(slog.NewJSONHandler(os.Stderr, nil))).With("component", "cicd-sensor-docker-proxy")
 	slog.SetDefault(logger)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

@@ -17,6 +17,7 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/manager"
 	"github.com/cicd-sensor/cicd-sensor/internal/managerauth"
 	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
+	"github.com/cicd-sensor/cicd-sensor/internal/slogid"
 )
 
 var version = "dev"
@@ -228,12 +229,12 @@ func buildServedConfig(startup manager.StartupConfig, baselineEnabled bool, outp
 }
 
 func newManagerJSONLogger() *slog.Logger {
-	return slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+	return slog.New(slogid.Wrap(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if len(groups) == 0 && a.Key == slog.TimeKey {
 				a.Value = slog.StringValue(a.Value.Time().UTC().Format(time.RFC3339Nano))
 			}
 			return a
 		},
-	})).With("component", "cicd-sensor-manager")
+	}))).With("component", "cicd-sensor-manager")
 }
