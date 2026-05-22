@@ -6,8 +6,8 @@
 <p align="center"><strong>Open-source eBPF-powered CI/CD runtime security sensor</strong></p>
 
 <div style="border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.9rem 1rem; margin: 1rem 0;">
-  <strong>Beta Version</strong><br>
-  cicd-sensor is currently in beta. Feedback, real-world testing, rule development, and validation in CI/CD environments are very welcome.
+  <strong>Pre-release: Active development</strong><br>
+  cicd-sensor is currently in pre-release and under active development. Feedback is very welcome.
 </div>
 
 CI/CD Pipelines build, release, and deploy software — and they hold the keys to do it: cloud credentials, signing keys, registry tokens.

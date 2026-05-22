@@ -1,6 +1,6 @@
 <!-- markdownlint-disable MD041 -->
-> 🚧 **Currently under development. Not yet ready for use.**
-> cicd-sensor is in beta. Feedback, real-world testing, rule development, and validation in CI/CD environments are very welcome.
+> 🚧 **Pre-release: Active development.**
+> cicd-sensor is currently in pre-release and under active development. Feedback is very welcome.
 
 <p align="center">
   <img src="cicd-sensor.png" alt="cicd-sensor logo" width="160">
