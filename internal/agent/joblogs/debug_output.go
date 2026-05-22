@@ -37,7 +37,7 @@ func newDebugOutput(logger *slog.Logger, dir string) (*DebugOutput, error) {
 	if dir == "" {
 		return nil, nil
 	}
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("create debug output dir %s: %w", dir, err)
 	}
 	return &DebugOutput{
