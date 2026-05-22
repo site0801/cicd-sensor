@@ -14,9 +14,15 @@ The manager delivers each batch to the configured sink.
 | `job_detection_log` | Per-rule-hit log for real-time detection and triage. Includes both `detect` and `collect` actions. | Streamed while the job is running. |
 | `job_runtime_telemetry_log` | Detailed runtime events for incident response and forensics. | Streamed while the job is running. |
 
-## Common context
+## Job context
 
-Every log entry includes context that identifies the job.
+Every log entry includes a `job` object.
+Use these fields to group logs for the same CI job.
+Other fields add useful context for search, reports, and triage.
+
+### Job Identity
+
+These fields identify where the job ran.
 
 | Field | Description |
 | --- | --- |
@@ -25,6 +31,18 @@ Every log entry includes context that identifies the job.
 | `project_path` | Repository / project path |
 | `runner_kind` | Runner kind, such as `machine` |
 | `job_link` | Job URL in the provider |
+| `github_run_id` | GitHub Actions run ID |
+| `github_job` | GitHub Actions job id/key from `GITHUB_JOB` |
+| `github_run_attempt` | GitHub Actions run attempt |
+| `github_runner_tracking_id` | GitHub runner tracking ID |
+| `gitlab_job_id` | GitLab CI job execution ID |
+
+### Job metadata
+
+These fields are enrichment for search, reports, and triage.
+
+| Field | Description |
+| --- | --- |
 | `commit_sha` | Target commit |
 | `ref_name` | Branch or tag |
 | `trigger` | CI event or trigger |
