@@ -103,14 +103,14 @@ func TestRunRuleValidate(t *testing.T) {
 			args:       []string{filepath.Join(testdataDir, "high_cost.yaml")},
 			wantCode:   0,
 			wantStdout: "OK: 1 file(s) bundled and validated\n",
-			wantStderr: []string{"warning:", "ruleset_id=set-high-cost rule_id=nested_contains", "condition estimated CEL cost", "exceeds 2000"},
+			wantStderr: []string{"warning:", "ruleset_id=set-high-cost rule_id=nested_contains", "condition estimated CEL cost", "exceeds 5000"},
 		},
 		{
 			name:       "high_cost_exception_warns_but_passes",
 			args:       []string{filepath.Join(testdataDir, "high_cost_exception.yaml")},
 			wantCode:   0,
 			wantStdout: "OK: 1 file(s) bundled and validated\n",
-			wantStderr: []string{"warning:", "ruleset_id=set-high-cost-exc rule_id=cheap_condition_with_expensive_exception", "exception estimated CEL cost", "exceeds 2000"},
+			wantStderr: []string{"warning:", "ruleset_id=set-high-cost-exc rule_id=cheap_condition_with_expensive_exception", "exception estimated CEL cost", "exceeds 5000"},
 		},
 	}
 

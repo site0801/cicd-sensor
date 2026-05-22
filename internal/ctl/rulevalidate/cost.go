@@ -9,17 +9,23 @@ import (
 	"github.com/google/cel-go/checker"
 )
 
-// CostWarnThreshold is an advisory rule-authoring threshold.
-const CostWarnThreshold uint64 = 2_000
+// CostWarnThreshold is an advisory rule-authoring threshold. It's
+// deliberately loose: a single ancestor × argv scan with literal
+// substring matching scores under it; the warning is meant to flag
+// rules that pile multiple such non-specialized nested scans together.
+const CostWarnThreshold uint64 = 5_000
 
 // Typical CI sizes keep cost warnings actionable. Runtime safety is separate.
+// argv / ancestors counts are intentionally on the low side of what CI
+// processes look like in practice so `exists` doesn't get charged for a
+// worst-case fan-out that nobody encounters.
 const (
 	pathTypicalBytes     uint64 = 128
 	ipTypicalBytes       uint64 = 45
 	protocolTypicalBytes uint64 = 8
-	argvTypicalItems     uint64 = 24
+	argvTypicalItems     uint64 = 16
 	argvItemTypicalBytes uint64 = 48
-	ancestorTypicalItems uint64 = 16
+	ancestorTypicalItems uint64 = 8
 	listTypicalItems     uint64 = 8
 	listItemTypicalBytes uint64 = 48
 )

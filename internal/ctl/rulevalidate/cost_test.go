@@ -92,24 +92,36 @@ func TestRuleSetCostsWarningPolicy(t *testing.T) {
 			wantWarnings: map[string]bool{"condition": false},
 		},
 		{
-			name: "ancestor_times_argv_scan_warns",
+			// A single ancestor × argv scan with one literal contains is
+			// within the advisory budget and should not warn.
+			name: "single_ancestor_times_argv_scan_is_acceptable",
 			set: ruleSetWithRule(rule.Rule{
 				RuleID:    "ancestor_argv",
 				EventKind: jobevent.ProcessExec,
 				Condition: `process.ancestors.exists(p, p.argv.exists(a, a.contains("token")))`,
 			}),
+			wantWarnings: map[string]bool{"condition": false},
+		},
+		{
+			// Many ORed literal contains inside ancestors × argv crosses
+			// the advisory threshold and warns.
+			name: "ancestor_times_argv_with_many_ored_contains_warns",
+			set: ruleSetWithRule(rule.Rule{
+				RuleID:    "ancestor_argv_ors",
+				EventKind: jobevent.ProcessExec,
+				Condition: `process.ancestors.exists(p, p.argv.exists(a, a.contains("aaa") || a.contains("bbb") || a.contains("ccc") || a.contains("ddd") || a.contains("eee") || a.contains("fff") || a.contains("ggg") || a.contains("hhh") || a.contains("iii") || a.contains("jjj")))`,
+			}),
 			wantWarnings: map[string]bool{"condition": true},
 		},
 		{
-			// Exception uses a non-specializable nested scan (literal
-			// substring), so the warning fires even though the condition
-			// is cheap.
+			// Exception uses the same many-ORed nested scan, so the
+			// warning fires even though the condition is cheap.
 			name: "heavy_exception_warns_even_when_condition_is_cheap",
 			set: ruleSetWithRule(rule.Rule{
 				RuleID:     "heavy_exception",
 				EventKind:  jobevent.ProcessExec,
 				Condition:  `process.exec_path.endsWith("/bash")`,
-				Exceptions: `process.ancestors.exists(p, p.argv.exists(a, a.contains("token")))`,
+				Exceptions: `process.ancestors.exists(p, p.argv.exists(a, a.contains("aaa") || a.contains("bbb") || a.contains("ccc") || a.contains("ddd") || a.contains("eee") || a.contains("fff") || a.contains("ggg") || a.contains("hhh") || a.contains("iii") || a.contains("jjj")))`,
 			}),
 			wantWarnings: map[string]bool{
 				"condition": false,

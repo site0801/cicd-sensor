@@ -3,9 +3,9 @@ rule_sets:
     rules:
       - rule_id: nested_contains
         event_kind: process_exec
-        # Literal-arg .contains() bypasses the specialized .exists rewrite
-        # so the nested ancestors × argv scan stays expensive in the static
-        # cost estimate. Keeps the warning test meaningful after the macro
-        # made list × contains-with-iter-var-arg patterns cheap.
-        condition: process.ancestors.exists(p, p.argv.exists(a, a.contains("token")))
+        # Literal-arg .contains() bypasses the specialized .exists rewrite,
+        # so an ancestors × argv scan stays charged in the static cost
+        # estimate. The many ORed contains pushes it well above the
+        # advisory threshold.
+        condition: process.ancestors.exists(p, p.argv.exists(a, a.contains("aaa") || a.contains("bbb") || a.contains("ccc") || a.contains("ddd") || a.contains("eee") || a.contains("fff") || a.contains("ggg") || a.contains("hhh") || a.contains("iii") || a.contains("jjj")))
         action: detect

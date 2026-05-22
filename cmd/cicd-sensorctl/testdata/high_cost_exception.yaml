@@ -4,8 +4,9 @@ rule_sets:
       - rule_id: cheap_condition_with_expensive_exception
         event_kind: process_exec
         condition: process.exec_path.endsWith("/bash")
-        # Literal-arg .contains() bypasses the specialized .exists rewrite
-        # so the nested ancestors × argv scan stays expensive in the static
-        # cost estimate.
-        exceptions: process.ancestors.exists(p, p.argv.exists(a, a.contains("token")))
+        # Literal-arg .contains() bypasses the specialized .exists rewrite,
+        # so an ancestors × argv scan stays charged in the static cost
+        # estimate. The many ORed contains pushes it well above the
+        # advisory threshold.
+        exceptions: process.ancestors.exists(p, p.argv.exists(a, a.contains("aaa") || a.contains("bbb") || a.contains("ccc") || a.contains("ddd") || a.contains("eee") || a.contains("fff") || a.contains("ggg") || a.contains("hhh") || a.contains("iii") || a.contains("jjj")))
         action: detect
