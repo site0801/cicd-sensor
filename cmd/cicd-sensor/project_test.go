@@ -71,7 +71,7 @@ func TestBuildProjectStartRequest(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := buildProjectStartRequest(tc.identity, jobMetadataFlags{}, "", "", managerConnectionConfig{})
+			got, err := buildProjectStartRequest(tc.identity, jobMetadataFlags{}, "", "", managerConnectionConfig{}, false)
 			if tc.wantErrText != "" {
 				if err == nil {
 					t.Fatal("expected error")
@@ -100,7 +100,7 @@ func TestBuildProjectStartRequest_LoadsProjectConfig(t *testing.T) {
 		t.Fatalf("write project config: %v", err)
 	}
 
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{})
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -115,7 +115,7 @@ func TestBuildProjectStartRequest_EmptyProjectConfigOmitsDefaultMaxAlerts(t *tes
 		t.Fatalf("write project config: %v", err)
 	}
 
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{})
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -130,7 +130,7 @@ func TestBuildProjectStartRequest_ZeroDefaultMaxAlertsIsUnset(t *testing.T) {
 		t.Fatalf("write project config: %v", err)
 	}
 
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{})
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -148,7 +148,7 @@ func TestBuildProjectStartRequest_IncludesNestedMetadata(t *testing.T) {
 		WorkflowRef: "acme/example/.github/workflows/build.yml@refs/heads/main",
 		WorkflowSHA: "def456",
 		Actor:       "alice",
-	}, "", "", managerConnectionConfig{})
+	}, "", "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestBuildProjectStartRequest_LoadsProjectRules(t *testing.T) {
 	}
 	rulesPath := writeProjectRuleFile(t, t.TempDir())
 
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, rulesPath, managerConnectionConfig{})
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, rulesPath, managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -202,7 +202,7 @@ func TestBuildProjectStartRequest_LoadsProjectRules(t *testing.T) {
 func TestBuildProjectStartRequest_RulesWithoutConfig(t *testing.T) {
 	rulesPath := writeProjectRuleFile(t, t.TempDir())
 
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", rulesPath, managerConnectionConfig{})
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", rulesPath, managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestBuildProjectStartRequest_ConfigWithoutRules(t *testing.T) {
 		t.Fatalf("write project config: %v", err)
 	}
 
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{})
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, configPath, "", managerConnectionConfig{}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -246,7 +246,7 @@ func TestBuildProjectStartRequest_LoadsProjectManager(t *testing.T) {
 	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{
 		URL:   "https://project-manager.example.com",
 		Token: token,
-	})
+	}, false)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
@@ -258,20 +258,28 @@ func TestBuildProjectStartRequest_LoadsProjectManager(t *testing.T) {
 	}
 }
 
-func TestBuildProjectStartRequest_IncludesDebugOutputDir(t *testing.T) {
-	debugOutputDir := filepath.Join(t.TempDir(), "debug")
-
-	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{}, debugOutputDir)
+func TestBuildProjectStartRequest_IncludesDebugEnabled(t *testing.T) {
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{}, true)
 	if err != nil {
 		t.Fatalf("buildProjectStartRequest: %v", err)
 	}
-	if got["debug_output_dir"] != debugOutputDir {
-		t.Fatalf("debug_output_dir: got %#v, want %q", got["debug_output_dir"], debugOutputDir)
+	if got["debug_enabled"] != true {
+		t.Fatalf("debug_enabled: got %#v, want true", got["debug_enabled"])
+	}
+}
+
+func TestBuildProjectStartRequest_OmitsDebugEnabledWhenFalse(t *testing.T) {
+	got, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{}, false)
+	if err != nil {
+		t.Fatalf("buildProjectStartRequest: %v", err)
+	}
+	if _, ok := got["debug_enabled"]; ok {
+		t.Fatalf("debug_enabled: got unexpected field %#v", got["debug_enabled"])
 	}
 }
 
 func TestBuildProjectStartRequest_ProjectManagerRequiresToken(t *testing.T) {
-	_, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{URL: "https://project-manager.example.com"})
+	_, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", "", managerConnectionConfig{URL: "https://project-manager.example.com"}, false)
 	if err == nil || !strings.Contains(err.Error(), "requires CICD_SENSOR_MANAGER_TOKEN") {
 		t.Fatalf("error: got %v, want token requirement", err)
 	}
@@ -283,7 +291,7 @@ func TestBuildProjectStartRequest_ProjectManagerRejectsLocalRules(t *testing.T) 
 	_, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, "", rulesPath, managerConnectionConfig{
 		URL:   "https://project-manager.example.com",
 		Token: managerauth.TokenPrefix + strings.Repeat("a", 64),
-	})
+	}, false)
 	if err == nil || !strings.Contains(err.Error(), "cannot be combined with --rules-file") {
 		t.Fatalf("error: got %v, want rules conflict", err)
 	}
@@ -295,7 +303,7 @@ func TestBuildProjectStartRequest_ProjectManagerRejectsAndDoesNotReadConfig(t *t
 	_, err := buildProjectStartRequest(githubIdentity(), jobMetadataFlags{}, missingConfig, "", managerConnectionConfig{
 		URL:   "https://project-manager.example.com",
 		Token: managerauth.TokenPrefix + strings.Repeat("a", 64),
-	})
+	}, false)
 	if err == nil || !strings.Contains(err.Error(), "cannot be combined with --config-file") {
 		t.Fatalf("error: got %v, want config conflict without reading config", err)
 	}

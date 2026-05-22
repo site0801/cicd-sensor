@@ -269,7 +269,7 @@ func TestJobRegistry_ManagerConfigDoesNotApplyToProjectScope(t *testing.T) {
 			Targets:        []rule.RuleModifierTarget{{RulesetID: "project", RuleID: "project-only"}},
 			OverrideAction: &collect,
 		}},
-	}}, managerclient.Connection{}, nil, false)
+	}}, managerclient.Connection{}, nil, false, false)
 	if err != nil {
 		t.Fatalf("apply project start: %v", err)
 	}
@@ -343,7 +343,7 @@ func TestJobRegistry_ApplyGitHubHostStart_RejectsAfterProjectOnly(t *testing.T) 
 	id := jobcontext.GitHubJobIdentity("github.com", "acme/example", "123", "build", "1", "runner-1")
 	meta := jobcontext.JobMetadata{}
 
-	projectJob, err := jr.ApplyGitHubProjectStart(testCtx, id, meta, "machine", 0, 0, nil, managerclient.Connection{}, nil, false)
+	projectJob, err := jr.ApplyGitHubProjectStart(testCtx, id, meta, "machine", 0, 0, nil, managerclient.Connection{}, nil, false, false)
 	if err != nil {
 		t.Fatalf("apply project start: %v", err)
 	}

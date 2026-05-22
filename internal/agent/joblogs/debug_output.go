@@ -11,6 +11,7 @@ import (
 )
 
 const DebugRuntimeTelemetryLogFilename = "job_runtime_telemetry_log.json.gz"
+const GitHubActionsDebugOutputDir = "/home/runner/work/_temp/cicd_sensor_debug"
 
 // DebugOutput writes local best-effort debug artifacts for hosted standalone
 // jobs. Each record is appended as a complete gzip member so the artifact is
@@ -21,11 +22,22 @@ type DebugOutput struct {
 	dir    string
 }
 
-func NewDebugOutput(logger *slog.Logger, dir string) (*DebugOutput, error) {
+func NewGitHubActionsDebugOutput(logger *slog.Logger) (*DebugOutput, error) {
+	return newDebugOutput(logger, GitHubActionsDebugOutputDir)
+}
+
+// NewDebugOutputForTesting creates a DebugOutput rooted at a caller-provided
+// directory. Production code should use NewGitHubActionsDebugOutput so debug
+// mode cannot be used as an arbitrary path write primitive.
+func NewDebugOutputForTesting(logger *slog.Logger, dir string) (*DebugOutput, error) {
+	return newDebugOutput(logger, dir)
+}
+
+func newDebugOutput(logger *slog.Logger, dir string) (*DebugOutput, error) {
 	if dir == "" {
 		return nil, nil
 	}
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, fmt.Errorf("create debug output dir %s: %w", dir, err)
 	}
 	return &DebugOutput{

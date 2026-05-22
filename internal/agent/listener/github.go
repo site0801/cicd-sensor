@@ -100,7 +100,7 @@ func (l *Listener) handleGitHubProjectStart(w http.ResponseWriter, r *http.Reque
 		managerConnection,
 		projectManagerClient,
 		l.fetchBaseline,
-		req.DebugOutputDir,
+		req.DebugEnabled,
 	)
 	if err != nil {
 		if errors.Is(err, jobregistry.ErrPeerNotInJob) {

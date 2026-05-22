@@ -229,7 +229,7 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_WritesDebugOutput(t *testing.T) {
 
 	debugDir := t.TempDir()
 	scope := jobscope.NewProject()
-	debugOutput, err := joblogs.NewDebugOutput(testJobScopeLogger, debugDir)
+	debugOutput, err := joblogs.NewDebugOutputForTesting(testJobScopeLogger, debugDir)
 	if err != nil {
 		t.Fatalf("NewDebugOutput: %v", err)
 	}
