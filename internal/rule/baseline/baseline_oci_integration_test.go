@@ -1,4 +1,4 @@
-//go:build ociintegration
+//go:build integration
 
 package baseline
 

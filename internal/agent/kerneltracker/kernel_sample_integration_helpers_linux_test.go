@@ -1,4 +1,4 @@
-//go:build linux && integration
+//go:build linux && bpf_integration
 
 package kerneltracker
 

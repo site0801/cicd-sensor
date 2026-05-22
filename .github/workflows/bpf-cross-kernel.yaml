@@ -44,7 +44,8 @@ jobs:
             version: "6.18-20260504.013701"
     env:
       LVH_IMAGE: kind
-      INTEGRATION_TEST_BIN: _lvh/tests/kerneltracker.test
+      KERNELTRACKER_INTEGRATION_TEST_BIN: _lvh/tests/kerneltracker.test
+      KERNELIO_INTEGRATION_TEST_BIN: _lvh/tests/kernelio.test
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -89,17 +90,20 @@ jobs:
             exit 1
           fi
 
-      - name: Build integration test binary
+      - name: Build integration test binaries
         env:
           CGO_ENABLED: "0"
         run: |
           mkdir -p _lvh/tests
-          make test-integration-compile INTEGRATION_TEST_BIN="$INTEGRATION_TEST_BIN"
-          file "$INTEGRATION_TEST_BIN" | tee -a "$GITHUB_STEP_SUMMARY"
-          if ! file "$INTEGRATION_TEST_BIN" | grep -q 'statically linked'; then
-            echo "::error::integration test binary is not statically linked; LVH rootfs cannot run it"
-            exit 1
-          fi
+          GOOS=linux GOARCH=amd64 go test -mod=vendor -c -tags bpf_integration -o "$KERNELTRACKER_INTEGRATION_TEST_BIN" ./internal/agent/kerneltracker
+          GOOS=linux GOARCH=amd64 go test -mod=vendor -c -tags bpf_integration -o "$KERNELIO_INTEGRATION_TEST_BIN" ./internal/agent/kerneltracker/kernelio
+          for bin in "$KERNELTRACKER_INTEGRATION_TEST_BIN" "$KERNELIO_INTEGRATION_TEST_BIN"; do
+            file "$bin" | tee -a "$GITHUB_STEP_SUMMARY"
+            if ! file "$bin" | grep -q 'statically linked'; then
+              echo "::error::integration test binary is not statically linked; LVH rootfs cannot run it"
+              exit 1
+            fi
+          done
 
       - name: "Run integration tests on kernel ${{ matrix.kernel.label }}"
         uses: cilium/little-vm-helper@e249f34602b03d331320955be94cbaa2cc4fb6a8 # v0.0.29
@@ -125,7 +129,8 @@ jobs:
             apt-get update -q | tee -a "\$log"
             apt-get install -y -q dnsutils libnss-resolve | tee -a "\$log"
             export TMPDIR=/dev/shm
-            /host/${{ env.INTEGRATION_TEST_BIN }} -test.v -test.count=1 -test.timeout=15m 2>&1 | tee -a "\$log"
+            /host/${{ env.KERNELTRACKER_INTEGRATION_TEST_BIN }} -test.v -test.count=1 -test.timeout=15m 2>&1 | tee -a "\$log"
+            /host/${{ env.KERNELIO_INTEGRATION_TEST_BIN }} -test.v -test.count=1 -test.timeout=15m 2>&1 | tee -a "\$log"
 
       - name: Reject unexpected skips
         run: |

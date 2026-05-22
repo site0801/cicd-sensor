@@ -42,7 +42,7 @@ func TestEvaluateEvent_TerminateKillsEventProcessIntegration(t *testing.T) {
 	event := testDispatchEvent("/usr/bin/sleep", "example.com", 443)
 	event.Process.PID = int32(cmd.Process.Pid)
 
-	EvaluateEvent(testCtx, eval, event, testEvalIdentity, jobcontext.JobMetadata{}, "machine", hostScope, nil, testLogger)
+	EvaluateEvent(testCtx, eval, event, testEvalIdentity, jobcontext.JobMetadata{}, "machine", hostScope, nil, testLogger, testActivation())
 
 	waitCh := make(chan error, 1)
 	go func() {

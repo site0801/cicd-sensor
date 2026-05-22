@@ -13,7 +13,6 @@ DIST_DIR := dist
 RULE_BUNDLE ?= $(DIST_DIR)/baseline-rules.yaml
 RULE_ARTIFACT_REF ?=
 RULE_ARTIFACT_DIR ?= $(DIST_DIR)/rules-artifact
-INTEGRATION_TEST_BIN ?= /tmp/cicd-sensor-kerneltracker-it.test
 
 LINUX_BINS := cicd-sensor cicd-sensor-manager cicd-sensorctl
 LINUX_ARCHES := amd64 arm64
@@ -33,7 +32,8 @@ help:
 	@printf '  %-29s %s\n' 'make bench-cel' 'run CEL evaluation benchmark once'
 	@printf '  %-29s %s\n' 'make rules-bundle' 'bundle rules/ into $(RULE_BUNDLE)'
 	@printf '  %-29s %s\n' 'make rules-artifact-validate' 'pull and validate an OCI rules artifact'
-	@printf '  %-29s %s\n' 'make test-integration' 'run privileged Linux integration tests'
+	@printf '  %-29s %s\n' 'make integration' 'run integration tests'
+	@printf '  %-29s %s\n' 'make bpf-integration' 'run privileged BPF integration tests'
 	@printf '  %-29s %s\n' 'make vendor' 'refresh vendor/ from go.mod'
 	@printf '  %-29s %s\n' 'make clean' 'remove local build outputs'
 
@@ -109,13 +109,13 @@ bench-cel:
 test-abi:
 	$(GO) test $(GO_MOD_FLAG) -tags kernel_sample_abi -count=1 ./internal/agent/kerneltracker/...
 
-.PHONY: test-integration-compile
-test-integration-compile:
-	GOOS=linux GOARCH=amd64 $(GO) test $(GO_MOD_FLAG) -c -tags integration -o $(INTEGRATION_TEST_BIN) ./internal/agent/kerneltracker
+.PHONY: integration
+integration:
+	$(GO) test $(GO_MOD_FLAG) -tags integration -count=1 ./...
 
-.PHONY: test-integration
-test-integration:
-	$(SUDO) -n env GOCACHE=$(GOCACHE) $(GO) test $(GO_MOD_FLAG) -tags integration -count=1 ./internal/agent/kerneltracker ./internal/agent/kerneltracker/kernelio
+.PHONY: bpf-integration
+bpf-integration:
+	$(SUDO) -n env GOCACHE=$(GOCACHE) $(GO) test $(GO_MOD_FLAG) -tags bpf_integration -count=1 ./internal/agent/kerneltracker/...
 
 .PHONY: rules-validate
 rules-validate:
@@ -147,7 +147,7 @@ diff-check:
 	git diff --exit-code
 
 .PHONY: check
-check: generate test test-abi rules-validate rules-bundle-validate test-integration-compile diff-check
+check: generate test test-abi rules-validate rules-bundle-validate diff-check
 
 .PHONY: clean
 clean:
