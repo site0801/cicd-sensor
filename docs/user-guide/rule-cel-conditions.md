@@ -129,6 +129,16 @@ condition: |
   )
 ```
 
+Example: process started by `npm install`. Multiple checks on the same ancestor go inside one `exists` predicate.
+
+```yaml
+condition: |
+  process.ancestors.exists(parent,
+    parent.exec_path.endsWith("/npm") &&
+    parent.argv.exists(arg, arg == "install")
+  )
+```
+
 Example: network tool started from a package manager.
 
 ```yaml

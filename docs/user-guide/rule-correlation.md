@@ -36,7 +36,7 @@ rule_sets:
 Correlation rules reference rules in the same RuleSet.
 The available field is `total_count`.
 
-In a correlation `condition`, use `rule.<rule_id>.total_count` or `rule["<rule_id>"].total_count`.
+In a correlation `condition`, use `rule.<rule_id>.total_count`.
 
 ```yaml
 condition: |
