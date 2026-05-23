@@ -73,7 +73,7 @@ jobs:
 | GitLab CI/CD | Self-hosted Kubernetes Executor | Planned |
 | GitLab CI/CD | GitLab-hosted runner | Not supported (technical constraints) |
 
-Linux kernel: 5.15 or later on `x86_64`, 6.1 or later on `aarch64`.
+Linux kernel: 5.15 or later on `amd64`, 6.1 or later on `arm64`.
 
 ## Documentation
 

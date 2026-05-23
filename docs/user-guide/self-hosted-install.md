@@ -9,8 +9,8 @@ For the GitLab CI/CD runner model, see [GitLab CI/CD self-hosted](gitlab-ci.md).
 ## OS / Linux prerequisites
 
 - Linux kernel:
-  - `x86_64` (AMD64): 5.15 or later.
-  - `aarch64` (ARM64): 6.1 or later. The arm64 lower bound is set by upstream Linux because BPF trampoline / fentry attach landed on arm64 only in 6.0+; on older arm64 kernels the agent fails to attach with `create raw tracepoint: not supported`.
+  - `amd64`: 5.15 or later.
+  - `arm64`: 6.1 or later. The arm64 lower bound is set by upstream Linux because BPF trampoline / fentry attach landed on arm64 only in 6.0+; on older arm64 kernels the agent fails to attach with `create raw tracepoint: not supported`.
 - cgroup v2.
 - systemd.
 - dockerd.
