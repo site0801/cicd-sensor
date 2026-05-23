@@ -5,7 +5,16 @@
 
 <p align="center"><strong>Open-source eBPF-powered CI/CD runtime security sensor</strong></p>
 
-<div style="border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.9rem 1rem; margin: 1rem 0;">
+<style>
+  .coal .prerelease-callout,
+  .navy .prerelease-callout,
+  .ayu .prerelease-callout {
+    background: #2d2419 !important;
+    color: #e8dcc4 !important;
+    border-left-color: #d97706 !important;
+  }
+</style>
+<div class="prerelease-callout" style="border-left: 4px solid #f59e0b; background: #fffbeb; padding: 0.9rem 1rem; margin: 1rem 0;">
   <strong>Pre-release: Active development</strong><br>
   cicd-sensor is currently in pre-release and under active development. Feedback is very welcome.
 </div>
