@@ -8,7 +8,46 @@ import (
 	"testing"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/managerauth"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
+
+func TestRunVersionFlag(t *testing.T) {
+	t.Parallel()
+
+	for _, arg := range []string{"--version", "-v"} {
+		t.Run(arg, func(t *testing.T) {
+			t.Parallel()
+
+			var stdout, stderr bytes.Buffer
+			code := run(context.Background(), []string{arg}, nil, &stdout, &stderr)
+			if code != 0 {
+				t.Fatalf("exit code: got %d, want 0", code)
+			}
+			if got, want := stdout.String(), version.Current+"\n"; got != want {
+				t.Fatalf("stdout: got %q, want %q", got, want)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("stderr: got %q, want empty", stderr.String())
+			}
+		})
+	}
+}
+
+func TestRunVersionFlagIsTopLevelOnly(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	code := run(context.Background(), []string{"rule", "--version"}, nil, &stdout, &stderr)
+	if code != 2 {
+		t.Fatalf("exit code: got %d, want 2", code)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout: got %q, want empty", stdout.String())
+	}
+	if got := stderr.String(); !strings.Contains(got, "unknown rule subcommand: --version") {
+		t.Fatalf("stderr: got %q, want unknown rule subcommand", got)
+	}
+}
 
 func TestRunReportDispatch(t *testing.T) {
 	t.Parallel()

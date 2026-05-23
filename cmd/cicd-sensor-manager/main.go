@@ -18,9 +18,8 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/managerauth"
 	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
 	"github.com/cicd-sensor/cicd-sensor/internal/slogid"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
-
-var version = "dev"
 
 const managerUsage = "usage: cicd-sensor-manager [flags]"
 
@@ -44,6 +43,7 @@ func main() {
 	var configFileFlag string
 	var rulesFileFlag string
 	var tokenFilePaths tokenFileFlags
+	var showVersion bool
 	flag.Usage = func() {
 		fmt.Fprintln(flag.CommandLine.Output(), managerUsage)
 		fmt.Fprintln(flag.CommandLine.Output())
@@ -54,13 +54,21 @@ func main() {
 		fmt.Fprintln(flag.CommandLine.Output(), "        Manager bearer token secret. Provide up to 2 tokens for rotation overlap.")
 		fmt.Fprintln(flag.CommandLine.Output())
 		fmt.Fprintln(flag.CommandLine.Output(), "Optional:")
+		fmt.Fprintln(flag.CommandLine.Output(), "  --version, -v")
+		fmt.Fprintln(flag.CommandLine.Output(), "        Print version and exit.")
 		fmt.Fprintln(flag.CommandLine.Output(), "  --rules-file PATH or CICD_SENSOR_MANAGER_RULES_FILE")
 		fmt.Fprintln(flag.CommandLine.Output(), "        Customer rules YAML file. When omitted, only baseline rules are served.")
 	}
 	flag.StringVar(&configFileFlag, "config-file", "", "Path to the manager startup config file.")
 	flag.StringVar(&rulesFileFlag, "rules-file", "", "Path to the customer rules YAML file (optional).")
 	flag.Var(&tokenFilePaths, "manager-token-file", "Path to a file containing a bearer token. May be specified up to twice.")
+	flag.BoolVar(&showVersion, "version", false, "Print version and exit.")
+	flag.BoolVar(&showVersion, "v", false, "Print version and exit.")
 	flag.Parse()
+	if showVersion {
+		fmt.Fprintln(os.Stdout, version.Current)
+		return
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -107,7 +115,7 @@ func main() {
 	servedConfig := buildServedConfig(startupConfig, outputSettings)
 
 	slog.InfoContext(ctx, "manager_started",
-		"version", version,
+		"version", version.Current,
 		"addr", bindAddress,
 		"config_file", opts.ConfigFile,
 		"rules_file", rulesFile,

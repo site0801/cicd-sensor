@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
-)
 
-var version = "dev"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
+)
 
 const defaultSocketPath = "/run/cicd-sensor/agent.sock"
 
@@ -16,6 +16,8 @@ func main() {
 	}
 
 	switch os.Args[1] {
+	case "--version", "-v":
+		fmt.Fprintln(os.Stdout, version.Current)
 	case "agent":
 		runAgentSubcommand(os.Args[2:])
 	case "host":

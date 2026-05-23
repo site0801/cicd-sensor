@@ -16,6 +16,7 @@ import (
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/managerclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
 	"github.com/cicd-sensor/cicd-sensor/internal/slogid"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
 
 const (
@@ -106,7 +107,7 @@ func runAgentStart(args []string) {
 	}
 
 	slog.InfoContext(ctx, "agent_started",
-		"version", version,
+		"version", version.Current,
 		"socket", opts.SocketPath,
 		"provider", opts.Provider,
 		"runner", opts.Runner,

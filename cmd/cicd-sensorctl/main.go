@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
 
 func main() {
@@ -37,6 +39,9 @@ func dispatch(ctx context.Context, args []string, stdin io.Reader, stdout, stder
 	}
 
 	switch args[0] {
+	case "--version", "-v":
+		fmt.Fprintln(stdout, version.Current)
+		return 0, nil
 	case "rule":
 		return runRule(ctx, args[1:], stdout, stderr)
 	case "token":
