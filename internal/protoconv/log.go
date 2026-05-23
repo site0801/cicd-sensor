@@ -10,12 +10,11 @@ import (
 
 // ToJobLogContext populates only provider-relevant fields so the unrelated
 // provider's keys stay zero-valued and drop out of marshalled JSON.
-func ToJobLogContext(identity jobcontext.JobIdentity, metadata jobcontext.JobMetadata, runnerKind string) *logv1.JobLogContext {
+func ToJobLogContext(identity jobcontext.JobIdentity, metadata jobcontext.JobMetadata) *logv1.JobLogContext {
 	out := &logv1.JobLogContext{
 		Provider:     string(identity.Provider),
 		ProviderHost: identity.ProviderHost,
 		ProjectPath:  identity.ProjectPath,
-		RunnerKind:   runnerKind,
 		JobLink:      logJobLink(identity),
 		CommitSha:    metadata.CommitSHA,
 		RefName:      metadata.RefName,

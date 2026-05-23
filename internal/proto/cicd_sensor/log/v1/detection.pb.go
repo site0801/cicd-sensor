@@ -33,7 +33,7 @@ type JobDetectionLogEntry struct {
 	LogId               *string        `protobuf:"bytes,5,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
 	Job                 *JobLogContext `protobuf:"bytes,6,opt,name=job,proto3" json:"job,omitempty"`
 	Scope               *string        `protobuf:"bytes,7,opt,name=scope,proto3,oneof" json:"scope,omitempty"`
-	ConfigRevision      *string        `protobuf:"bytes,8,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
+	RunnerKind          *string        `protobuf:"bytes,8,opt,name=runner_kind,proto3,oneof" json:"runner_kind,omitempty"`
 	RulesetId           *string        `protobuf:"bytes,9,opt,name=ruleset_id,proto3,oneof" json:"ruleset_id,omitempty"`
 	RuleId              *string        `protobuf:"bytes,10,opt,name=rule_id,proto3,oneof" json:"rule_id,omitempty"`
 	RulesetRevision     *string        `protobuf:"bytes,11,opt,name=ruleset_revision,proto3,oneof" json:"ruleset_revision,omitempty"`
@@ -125,9 +125,9 @@ func (x *JobDetectionLogEntry) GetScope() string {
 	return ""
 }
 
-func (x *JobDetectionLogEntry) GetConfigRevision() string {
-	if x != nil && x.ConfigRevision != nil {
-		return *x.ConfigRevision
+func (x *JobDetectionLogEntry) GetRunnerKind() string {
+	if x != nil && x.RunnerKind != nil {
+		return *x.RunnerKind
 	}
 	return ""
 }
@@ -192,7 +192,7 @@ var File_cicd_sensor_log_v1_detection_proto protoreflect.FileDescriptor
 
 const file_cicd_sensor_log_v1_detection_proto_rawDesc = "" +
 	"\n" +
-	"\"cicd_sensor/log/v1/detection.proto\x12\x12cicd_sensor.log.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9b\a\n" +
+	"\"cicd_sensor/log/v1/detection.proto\x12\x12cicd_sensor.log.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x8f\a\n" +
 	"\x14JobDetectionLogEntry\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1f\n" +
 	"\blog_type\x18\x02 \x01(\tH\x00R\blog_type\x88\x01\x01\x126\n" +
@@ -201,8 +201,8 @@ const file_cicd_sensor_log_v1_detection_proto_rawDesc = "" +
 	"\ragent_version\x18\x04 \x01(\tH\x02R\ragent_version\x88\x01\x01\x12\x1b\n" +
 	"\x06log_id\x18\x05 \x01(\tH\x03R\x06log_id\x88\x01\x01\x123\n" +
 	"\x03job\x18\x06 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x19\n" +
-	"\x05scope\x18\a \x01(\tH\x04R\x05scope\x88\x01\x01\x12-\n" +
-	"\x0fconfig_revision\x18\b \x01(\tH\x05R\x0fconfig_revision\x88\x01\x01\x12#\n" +
+	"\x05scope\x18\a \x01(\tH\x04R\x05scope\x88\x01\x01\x12%\n" +
+	"\vrunner_kind\x18\b \x01(\tH\x05R\vrunner_kind\x88\x01\x01\x12#\n" +
 	"\n" +
 	"ruleset_id\x18\t \x01(\tH\x06R\n" +
 	"ruleset_id\x88\x01\x01\x12\x1d\n" +
@@ -219,8 +219,8 @@ const file_cicd_sensor_log_v1_detection_proto_rawDesc = "" +
 	"\x0f_schema_versionB\x10\n" +
 	"\x0e_agent_versionB\t\n" +
 	"\a_log_idB\b\n" +
-	"\x06_scopeB\x12\n" +
-	"\x10_config_revisionB\r\n" +
+	"\x06_scopeB\x0e\n" +
+	"\f_runner_kindB\r\n" +
 	"\v_ruleset_idB\n" +
 	"\n" +
 	"\b_rule_idB\x13\n" +

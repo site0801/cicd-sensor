@@ -6,27 +6,26 @@ message JobLogContext {
   string provider = 1 [json_name = "provider"];
   string provider_host = 2 [json_name = "provider_host"];
   string project_path = 3 [json_name = "project_path"];
-  string runner_kind = 4 [json_name = "runner_kind"];
-  string job_link = 5 [json_name = "job_link"];
-  string commit_sha = 6 [json_name = "commit_sha"];
-  string ref_name = 7 [json_name = "ref_name"];
-  string trigger = 8 [json_name = "trigger"];
-  string actor_id = 9 [json_name = "actor_id"];
-  string actor_name = 10 [json_name = "actor_name"];
+  string job_link = 4 [json_name = "job_link"];
+  string commit_sha = 5 [json_name = "commit_sha"];
+  string ref_name = 6 [json_name = "ref_name"];
+  string trigger = 7 [json_name = "trigger"];
+  string actor_id = 8 [json_name = "actor_id"];
+  string actor_name = 9 [json_name = "actor_name"];
 
   // GitHub only.
-  string github_run_id = 20 [json_name = "github_run_id"];
-  string github_job = 21 [json_name = "github_job"];
-  string github_run_attempt = 22 [json_name = "github_run_attempt"];
-  string github_runner_tracking_id = 23 [json_name = "github_runner_tracking_id"];
-  string github_workflow_ref = 24 [json_name = "github_workflow_ref"];
-  string github_workflow_sha = 25 [json_name = "github_workflow_sha"];
-  string github_workflow = 26 [json_name = "github_workflow"];
+  string github_run_id = 10 [json_name = "github_run_id"];
+  string github_job = 11 [json_name = "github_job"];
+  string github_run_attempt = 12 [json_name = "github_run_attempt"];
+  string github_runner_tracking_id = 13 [json_name = "github_runner_tracking_id"];
+  string github_workflow_ref = 14 [json_name = "github_workflow_ref"];
+  string github_workflow_sha = 15 [json_name = "github_workflow_sha"];
+  string github_workflow = 16 [json_name = "github_workflow"];
 
   // GitLab only.
-  string gitlab_job_id = 30 [json_name = "gitlab_job_id"];
-  string gitlab_job_name = 31 [json_name = "gitlab_job_name"];
-  string gitlab_config_ref_uri = 32 [json_name = "gitlab_config_ref_uri"];
+  string gitlab_job_id = 17 [json_name = "gitlab_job_id"];
+  string gitlab_job_name = 18 [json_name = "gitlab_job_name"];
+  string gitlab_config_ref_uri = 19 [json_name = "gitlab_config_ref_uri"];
 }
 
 message EventRecord {

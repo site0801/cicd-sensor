@@ -182,7 +182,7 @@ func TestJobScopeStateWriteDetectionLogForHit_MaxAlertsCapsDetectionLog(t *testi
 	if got, want := entries[0].GetRuleName(), "Detect token"; got != want {
 		t.Fatalf("rule name: got %q, want %q", got, want)
 	}
-	if got, want := entries[0].Job.GetRunnerKind(), "machine"; got != want {
+	if got, want := entries[0].GetRunnerKind(), "machine"; got != want {
 		t.Fatalf("runner kind: got %q, want %q", got, want)
 	}
 	if got, want := entries[0].GetRuleDescription(), "flags token-like process arguments"; got != want {
@@ -213,7 +213,7 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_EmitsEvent(t *testing.T) {
 	if got, want := entries[0].GetScope(), string(jobcontext.ScopeKindProject); got != want {
 		t.Fatalf("scope: got %q, want %q", got, want)
 	}
-	if got, want := entries[0].Job.GetRunnerKind(), "machine"; got != want {
+	if got, want := entries[0].GetRunnerKind(), "machine"; got != want {
 		t.Fatalf("runner kind: got %q, want %q", got, want)
 	}
 	if got, want := entries[0].Event.GetId(), event.ID; got != want {
@@ -316,7 +316,7 @@ func TestJobScopeStateEmitJobResultLog_FlushesFinalRecord(t *testing.T) {
 	if got, want := entry.GetScope(), string(jobcontext.ScopeKindHost); got != want {
 		t.Fatalf("scope: got %q, want %q", got, want)
 	}
-	if got, want := entry.Job.GetRunnerKind(), "machine"; got != want {
+	if got, want := entry.GetRunnerKind(), "machine"; got != want {
 		t.Fatalf("runner kind: got %q, want %q", got, want)
 	}
 	if got, want := entry.GetConfigRevision(), "config-sha"; got != want {

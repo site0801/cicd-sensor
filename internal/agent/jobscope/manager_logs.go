@@ -81,11 +81,10 @@ func (s *JobScopeState) writeDetectionLog(ctx context.Context, identity jobconte
 	ruleName, ruleDescription, rulesetRevision := s.resolvedRuleInfo(hit.Identity)
 	payload, err := joblogs.MarshalDetectionLogEntry(joblogs.DetectionLogInput{
 		ScopeLogContext: joblogs.ScopeLogContext{
-			Identity:       identity,
-			Metadata:       metadata,
-			RunnerKind:     runnerKind,
-			Scope:          s.Kind,
-			ConfigRevision: s.ConfigRevision,
+			Identity:   identity,
+			Metadata:   metadata,
+			RunnerKind: runnerKind,
+			Scope:      s.Kind,
 		},
 		Hit:                 hit,
 		Event:               event,
@@ -121,11 +120,10 @@ func (s *JobScopeState) WriteRuntimeTelemetryLog(ctx context.Context, identity j
 
 	payload, err := joblogs.MarshalRuntimeTelemetryLogEntry(joblogs.RuntimeTelemetryLogInput{
 		ScopeLogContext: joblogs.ScopeLogContext{
-			Identity:       identity,
-			Metadata:       metadata,
-			RunnerKind:     runnerKind,
-			Scope:          s.Kind,
-			ConfigRevision: s.ConfigRevision,
+			Identity:   identity,
+			Metadata:   metadata,
+			RunnerKind: runnerKind,
+			Scope:      s.Kind,
 		},
 		Event: event,
 	})

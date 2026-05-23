@@ -26,7 +26,9 @@ Every log entry carries these top-level fields, regardless of log kind.
 | `agent_version` | Agent build version |
 | `log_id` | UUID(v7) per log row |
 | `scope` | `host` for self-hosted configuration, `project` for GitHub Action invocations |
-| `config_revision` | Manager config revision used for this job, or `(none)` |
+| `runner_kind` | Runner kind, such as `machine` |
+
+`job_result_log` additionally carries `config_revision` — the manager config revision used for this job, or `(none)`.
 
 ## Job context
 
@@ -39,21 +41,20 @@ Other fields add useful context for search, reports, and triage.
 | `provider` | `github` or `gitlab` |
 | `provider_host` | `github.com`, `gitlab.com`, or a self-managed host |
 | `project_path` | Repository / project path |
-| `runner_kind` | Runner kind, such as `machine` |
 | `job_link` | Job URL in the provider |
-| `github_run_id` | GitHub Actions run ID |
-| `github_job` | GitHub Actions job id/key from `GITHUB_JOB` |
-| `github_run_attempt` | GitHub Actions run attempt |
-| `github_runner_tracking_id` | GitHub runner tracking ID |
-| `gitlab_job_id` | GitLab CI job execution ID |
 | `commit_sha` | Target commit |
 | `ref_name` | Branch or tag |
 | `trigger` | CI event or trigger |
 | `actor_id` | Provider actor ID |
 | `actor_name` | Provider actor name |
+| `github_run_id` | GitHub Actions run ID |
+| `github_job` | GitHub Actions job id/key from `GITHUB_JOB` |
+| `github_run_attempt` | GitHub Actions run attempt |
+| `github_runner_tracking_id` | GitHub runner tracking ID |
 | `github_workflow_ref` | GitHub Actions workflow file ref |
 | `github_workflow_sha` | GitHub Actions workflow file commit SHA |
 | `github_workflow` | GitHub Actions workflow name |
+| `gitlab_job_id` | GitLab CI job execution ID |
 | `gitlab_job_name` | GitLab CI job name |
 | `gitlab_config_ref_uri` | GitLab CI config provenance URI |
 

@@ -22,7 +22,7 @@ func TestToJobLogContext_GitHub(t *testing.T) {
 		GitHubWorkflow:    "CI",
 	}
 
-	got := ToJobLogContext(identity, metadata, "github-hosted")
+	got := ToJobLogContext(identity, metadata)
 	if got.Provider != "github" ||
 		got.ProviderHost != "github.com" ||
 		got.ProjectPath != "acme/example" ||
@@ -31,7 +31,6 @@ func TestToJobLogContext_GitHub(t *testing.T) {
 		got.GithubJob != "build" ||
 		got.GithubRunAttempt != "2" ||
 		got.GithubRunnerTrackingId != "runner-1" ||
-		got.RunnerKind != "github-hosted" ||
 		got.CommitSha != "abc123" ||
 		got.RefName != "main" ||
 		got.Trigger != "push" ||
@@ -47,7 +46,7 @@ func TestToJobLogContext_GitHub(t *testing.T) {
 // JSON marshal output must not leak gitlab_* keys into a GitHub job log.
 func TestToJobLogContext_GitHubJSONOmitsGitLabFields(t *testing.T) {
 	identity := jobcontext.GitHubJobIdentity("github.com", "acme/example", "25624771295", "build", "2", "runner-1")
-	ctx := ToJobLogContext(identity, jobcontext.JobMetadata{CommitSHA: "abc"}, "github-hosted")
+	ctx := ToJobLogContext(identity, jobcontext.JobMetadata{CommitSHA: "abc"})
 	data, err := (protojson.MarshalOptions{EmitDefaultValues: false}).Marshal(ctx)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -74,7 +73,7 @@ func TestToJobLogContext_GitLab(t *testing.T) {
 		GitLabJobName:      "jirojiro-smoke",
 		GitLabConfigRefURI: "gitlab.com/group/project//.gitlab-ci.yml@refs/heads/main",
 	}
-	got := ToJobLogContext(identity, metadata, "gitlab-container")
+	got := ToJobLogContext(identity, metadata)
 	if got.Provider != "gitlab" ||
 		got.GitlabJobId != "14274377073" ||
 		got.GitlabJobName != "jirojiro-smoke" ||
@@ -88,7 +87,7 @@ func TestToJobLogContext_GitLab(t *testing.T) {
 // JSON marshal output must not leak github_* keys into a GitLab job log.
 func TestToJobLogContext_GitLabJSONOmitsGitHubFields(t *testing.T) {
 	identity := jobcontext.GitLabJobIdentity("gitlab.com", "group/project", "14274377073")
-	ctx := ToJobLogContext(identity, jobcontext.JobMetadata{CommitSHA: "abc"}, "gitlab-container")
+	ctx := ToJobLogContext(identity, jobcontext.JobMetadata{CommitSHA: "abc"})
 	data, err := (protojson.MarshalOptions{EmitDefaultValues: false}).Marshal(ctx)
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
@@ -152,7 +151,7 @@ func TestToJobLogContext_EmptyJobLink(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ToJobLogContext(tt.identity, jobcontext.JobMetadata{}, "").JobLink; got != "" {
+			if got := ToJobLogContext(tt.identity, jobcontext.JobMetadata{}).JobLink; got != "" {
 				t.Fatalf("job link: got %q, want empty", got)
 			}
 		})

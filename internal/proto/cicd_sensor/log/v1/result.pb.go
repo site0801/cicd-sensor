@@ -33,18 +33,19 @@ type JobResultLogEntry struct {
 	LogId           *string                `protobuf:"bytes,5,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
 	Job             *JobLogContext         `protobuf:"bytes,6,opt,name=job,proto3" json:"job,omitempty"`
 	Scope           *string                `protobuf:"bytes,7,opt,name=scope,proto3,oneof" json:"scope,omitempty"`
-	ConfigRevision  *string                `protobuf:"bytes,8,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
-	Rulesets        []*RulesetUse          `protobuf:"bytes,9,rep,name=rulesets,proto3" json:"rulesets,omitempty"`
-	RuleModifiers   []*RuleModifierUse     `protobuf:"bytes,10,rep,name=rule_modifiers,proto3" json:"rule_modifiers,omitempty"`
-	NetworkConnects []string               `protobuf:"bytes,11,rep,name=network_connects,proto3" json:"network_connects,omitempty"`
-	Domains         []string               `protobuf:"bytes,12,rep,name=domains,proto3" json:"domains,omitempty"`
-	Detections      []*DetectedRuleSummary `protobuf:"bytes,13,rep,name=detections,proto3" json:"detections,omitempty"`
-	EventsTotal     *uint32                `protobuf:"varint,14,opt,name=events_total,proto3,oneof" json:"events_total,omitempty"`
-	EventsDropped   *uint32                `protobuf:"varint,15,opt,name=events_dropped,proto3,oneof" json:"events_dropped,omitempty"`
-	StartTime       *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=start_time,proto3" json:"start_time,omitempty"`
-	EndTime         *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=end_time,proto3" json:"end_time,omitempty"`
-	DurationS       *int64                 `protobuf:"varint,18,opt,name=duration_s,proto3,oneof" json:"duration_s,omitempty"`
-	FinalizeReason  *string                `protobuf:"bytes,19,opt,name=finalize_reason,proto3,oneof" json:"finalize_reason,omitempty"`
+	RunnerKind      *string                `protobuf:"bytes,8,opt,name=runner_kind,proto3,oneof" json:"runner_kind,omitempty"`
+	ConfigRevision  *string                `protobuf:"bytes,9,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
+	Rulesets        []*RulesetUse          `protobuf:"bytes,10,rep,name=rulesets,proto3" json:"rulesets,omitempty"`
+	RuleModifiers   []*RuleModifierUse     `protobuf:"bytes,11,rep,name=rule_modifiers,proto3" json:"rule_modifiers,omitempty"`
+	NetworkConnects []string               `protobuf:"bytes,12,rep,name=network_connects,proto3" json:"network_connects,omitempty"`
+	Domains         []string               `protobuf:"bytes,13,rep,name=domains,proto3" json:"domains,omitempty"`
+	Detections      []*DetectedRuleSummary `protobuf:"bytes,14,rep,name=detections,proto3" json:"detections,omitempty"`
+	EventsTotal     *uint32                `protobuf:"varint,15,opt,name=events_total,proto3,oneof" json:"events_total,omitempty"`
+	EventsDropped   *uint32                `protobuf:"varint,16,opt,name=events_dropped,proto3,oneof" json:"events_dropped,omitempty"`
+	StartTime       *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=start_time,proto3" json:"start_time,omitempty"`
+	EndTime         *timestamppb.Timestamp `protobuf:"bytes,18,opt,name=end_time,proto3" json:"end_time,omitempty"`
+	DurationS       *int64                 `protobuf:"varint,19,opt,name=duration_s,proto3,oneof" json:"duration_s,omitempty"`
+	FinalizeReason  *string                `protobuf:"bytes,20,opt,name=finalize_reason,proto3,oneof" json:"finalize_reason,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -124,6 +125,13 @@ func (x *JobResultLogEntry) GetJob() *JobLogContext {
 func (x *JobResultLogEntry) GetScope() string {
 	if x != nil && x.Scope != nil {
 		return *x.Scope
+	}
+	return ""
+}
+
+func (x *JobResultLogEntry) GetRunnerKind() string {
+	if x != nil && x.RunnerKind != nil {
+		return *x.RunnerKind
 	}
 	return ""
 }
@@ -396,7 +404,7 @@ var File_cicd_sensor_log_v1_result_proto protoreflect.FileDescriptor
 
 const file_cicd_sensor_log_v1_result_proto_rawDesc = "" +
 	"\n" +
-	"\x1fcicd_sensor/log/v1/result.proto\x12\x12cicd_sensor.log.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\b\n" +
+	"\x1fcicd_sensor/log/v1/result.proto\x12\x12cicd_sensor.log.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\b\n" +
 	"\x11JobResultLogEntry\x128\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1f\n" +
 	"\blog_type\x18\x02 \x01(\tH\x00R\blog_type\x88\x01\x01\x126\n" +
@@ -405,31 +413,34 @@ const file_cicd_sensor_log_v1_result_proto_rawDesc = "" +
 	"\ragent_version\x18\x04 \x01(\tH\x02R\ragent_version\x88\x01\x01\x12\x1b\n" +
 	"\x06log_id\x18\x05 \x01(\tH\x03R\x06log_id\x88\x01\x01\x123\n" +
 	"\x03job\x18\x06 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x19\n" +
-	"\x05scope\x18\a \x01(\tH\x04R\x05scope\x88\x01\x01\x12-\n" +
-	"\x0fconfig_revision\x18\b \x01(\tH\x05R\x0fconfig_revision\x88\x01\x01\x12:\n" +
-	"\brulesets\x18\t \x03(\v2\x1e.cicd_sensor.log.v1.RulesetUseR\brulesets\x12K\n" +
-	"\x0erule_modifiers\x18\n" +
-	" \x03(\v2#.cicd_sensor.log.v1.RuleModifierUseR\x0erule_modifiers\x12*\n" +
-	"\x10network_connects\x18\v \x03(\tR\x10network_connects\x12\x18\n" +
-	"\adomains\x18\f \x03(\tR\adomains\x12G\n" +
+	"\x05scope\x18\a \x01(\tH\x04R\x05scope\x88\x01\x01\x12%\n" +
+	"\vrunner_kind\x18\b \x01(\tH\x05R\vrunner_kind\x88\x01\x01\x12-\n" +
+	"\x0fconfig_revision\x18\t \x01(\tH\x06R\x0fconfig_revision\x88\x01\x01\x12:\n" +
+	"\brulesets\x18\n" +
+	" \x03(\v2\x1e.cicd_sensor.log.v1.RulesetUseR\brulesets\x12K\n" +
+	"\x0erule_modifiers\x18\v \x03(\v2#.cicd_sensor.log.v1.RuleModifierUseR\x0erule_modifiers\x12*\n" +
+	"\x10network_connects\x18\f \x03(\tR\x10network_connects\x12\x18\n" +
+	"\adomains\x18\r \x03(\tR\adomains\x12G\n" +
 	"\n" +
-	"detections\x18\r \x03(\v2'.cicd_sensor.log.v1.DetectedRuleSummaryR\n" +
+	"detections\x18\x0e \x03(\v2'.cicd_sensor.log.v1.DetectedRuleSummaryR\n" +
 	"detections\x12'\n" +
-	"\fevents_total\x18\x0e \x01(\rH\x06R\fevents_total\x88\x01\x01\x12+\n" +
-	"\x0eevents_dropped\x18\x0f \x01(\rH\aR\x0eevents_dropped\x88\x01\x01\x12:\n" +
+	"\fevents_total\x18\x0f \x01(\rH\aR\fevents_total\x88\x01\x01\x12+\n" +
+	"\x0eevents_dropped\x18\x10 \x01(\rH\bR\x0eevents_dropped\x88\x01\x01\x12:\n" +
 	"\n" +
-	"start_time\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"start_time\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"start_time\x126\n" +
-	"\bend_time\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampR\bend_time\x12#\n" +
+	"\bend_time\x18\x12 \x01(\v2\x1a.google.protobuf.TimestampR\bend_time\x12#\n" +
 	"\n" +
-	"duration_s\x18\x12 \x01(\x03H\bR\n" +
+	"duration_s\x18\x13 \x01(\x03H\tR\n" +
 	"duration_s\x88\x01\x01\x12-\n" +
-	"\x0ffinalize_reason\x18\x13 \x01(\tH\tR\x0ffinalize_reason\x88\x01\x01B\v\n" +
+	"\x0ffinalize_reason\x18\x14 \x01(\tH\n" +
+	"R\x0ffinalize_reason\x88\x01\x01B\v\n" +
 	"\t_log_typeB\x11\n" +
 	"\x0f_schema_versionB\x10\n" +
 	"\x0e_agent_versionB\t\n" +
 	"\a_log_idB\b\n" +
-	"\x06_scopeB\x12\n" +
+	"\x06_scopeB\x0e\n" +
+	"\f_runner_kindB\x12\n" +
 	"\x10_config_revisionB\x0f\n" +
 	"\r_events_totalB\x11\n" +
 	"\x0f_events_droppedB\r\n" +

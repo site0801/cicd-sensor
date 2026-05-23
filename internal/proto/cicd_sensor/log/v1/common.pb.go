@@ -26,25 +26,24 @@ type JobLogContext struct {
 	Provider     string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
 	ProviderHost string                 `protobuf:"bytes,2,opt,name=provider_host,proto3" json:"provider_host,omitempty"`
 	ProjectPath  string                 `protobuf:"bytes,3,opt,name=project_path,proto3" json:"project_path,omitempty"`
-	RunnerKind   string                 `protobuf:"bytes,4,opt,name=runner_kind,proto3" json:"runner_kind,omitempty"`
-	JobLink      string                 `protobuf:"bytes,5,opt,name=job_link,proto3" json:"job_link,omitempty"`
-	CommitSha    string                 `protobuf:"bytes,6,opt,name=commit_sha,proto3" json:"commit_sha,omitempty"`
-	RefName      string                 `protobuf:"bytes,7,opt,name=ref_name,proto3" json:"ref_name,omitempty"`
-	Trigger      string                 `protobuf:"bytes,8,opt,name=trigger,proto3" json:"trigger,omitempty"`
-	ActorId      string                 `protobuf:"bytes,9,opt,name=actor_id,proto3" json:"actor_id,omitempty"`
-	ActorName    string                 `protobuf:"bytes,10,opt,name=actor_name,proto3" json:"actor_name,omitempty"`
+	JobLink      string                 `protobuf:"bytes,4,opt,name=job_link,proto3" json:"job_link,omitempty"`
+	CommitSha    string                 `protobuf:"bytes,5,opt,name=commit_sha,proto3" json:"commit_sha,omitempty"`
+	RefName      string                 `protobuf:"bytes,6,opt,name=ref_name,proto3" json:"ref_name,omitempty"`
+	Trigger      string                 `protobuf:"bytes,7,opt,name=trigger,proto3" json:"trigger,omitempty"`
+	ActorId      string                 `protobuf:"bytes,8,opt,name=actor_id,proto3" json:"actor_id,omitempty"`
+	ActorName    string                 `protobuf:"bytes,9,opt,name=actor_name,proto3" json:"actor_name,omitempty"`
 	// GitHub only.
-	GithubRunId            string `protobuf:"bytes,20,opt,name=github_run_id,proto3" json:"github_run_id,omitempty"`
-	GithubJob              string `protobuf:"bytes,21,opt,name=github_job,proto3" json:"github_job,omitempty"`
-	GithubRunAttempt       string `protobuf:"bytes,22,opt,name=github_run_attempt,proto3" json:"github_run_attempt,omitempty"`
-	GithubRunnerTrackingId string `protobuf:"bytes,23,opt,name=github_runner_tracking_id,proto3" json:"github_runner_tracking_id,omitempty"`
-	GithubWorkflowRef      string `protobuf:"bytes,24,opt,name=github_workflow_ref,proto3" json:"github_workflow_ref,omitempty"`
-	GithubWorkflowSha      string `protobuf:"bytes,25,opt,name=github_workflow_sha,proto3" json:"github_workflow_sha,omitempty"`
-	GithubWorkflow         string `protobuf:"bytes,26,opt,name=github_workflow,proto3" json:"github_workflow,omitempty"`
+	GithubRunId            string `protobuf:"bytes,10,opt,name=github_run_id,proto3" json:"github_run_id,omitempty"`
+	GithubJob              string `protobuf:"bytes,11,opt,name=github_job,proto3" json:"github_job,omitempty"`
+	GithubRunAttempt       string `protobuf:"bytes,12,opt,name=github_run_attempt,proto3" json:"github_run_attempt,omitempty"`
+	GithubRunnerTrackingId string `protobuf:"bytes,13,opt,name=github_runner_tracking_id,proto3" json:"github_runner_tracking_id,omitempty"`
+	GithubWorkflowRef      string `protobuf:"bytes,14,opt,name=github_workflow_ref,proto3" json:"github_workflow_ref,omitempty"`
+	GithubWorkflowSha      string `protobuf:"bytes,15,opt,name=github_workflow_sha,proto3" json:"github_workflow_sha,omitempty"`
+	GithubWorkflow         string `protobuf:"bytes,16,opt,name=github_workflow,proto3" json:"github_workflow,omitempty"`
 	// GitLab only.
-	GitlabJobId        string `protobuf:"bytes,30,opt,name=gitlab_job_id,proto3" json:"gitlab_job_id,omitempty"`
-	GitlabJobName      string `protobuf:"bytes,31,opt,name=gitlab_job_name,proto3" json:"gitlab_job_name,omitempty"`
-	GitlabConfigRefUri string `protobuf:"bytes,32,opt,name=gitlab_config_ref_uri,proto3" json:"gitlab_config_ref_uri,omitempty"`
+	GitlabJobId        string `protobuf:"bytes,17,opt,name=gitlab_job_id,proto3" json:"gitlab_job_id,omitempty"`
+	GitlabJobName      string `protobuf:"bytes,18,opt,name=gitlab_job_name,proto3" json:"gitlab_job_name,omitempty"`
+	GitlabConfigRefUri string `protobuf:"bytes,19,opt,name=gitlab_config_ref_uri,proto3" json:"gitlab_config_ref_uri,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -96,13 +95,6 @@ func (x *JobLogContext) GetProviderHost() string {
 func (x *JobLogContext) GetProjectPath() string {
 	if x != nil {
 		return x.ProjectPath
-	}
-	return ""
-}
-
-func (x *JobLogContext) GetRunnerKind() string {
-	if x != nil {
-		return x.RunnerKind
 	}
 	return ""
 }
@@ -940,35 +932,34 @@ var File_cicd_sensor_log_v1_common_proto protoreflect.FileDescriptor
 
 const file_cicd_sensor_log_v1_common_proto_rawDesc = "" +
 	"\n" +
-	"\x1fcicd_sensor/log/v1/common.proto\x12\x12cicd_sensor.log.v1\"\x8d\x06\n" +
+	"\x1fcicd_sensor/log/v1/common.proto\x12\x12cicd_sensor.log.v1\"\xeb\x05\n" +
 	"\rJobLogContext\x12\x1a\n" +
 	"\bprovider\x18\x01 \x01(\tR\bprovider\x12$\n" +
 	"\rprovider_host\x18\x02 \x01(\tR\rprovider_host\x12\"\n" +
-	"\fproject_path\x18\x03 \x01(\tR\fproject_path\x12 \n" +
-	"\vrunner_kind\x18\x04 \x01(\tR\vrunner_kind\x12\x1a\n" +
-	"\bjob_link\x18\x05 \x01(\tR\bjob_link\x12\x1e\n" +
+	"\fproject_path\x18\x03 \x01(\tR\fproject_path\x12\x1a\n" +
+	"\bjob_link\x18\x04 \x01(\tR\bjob_link\x12\x1e\n" +
 	"\n" +
-	"commit_sha\x18\x06 \x01(\tR\n" +
+	"commit_sha\x18\x05 \x01(\tR\n" +
 	"commit_sha\x12\x1a\n" +
-	"\bref_name\x18\a \x01(\tR\bref_name\x12\x18\n" +
-	"\atrigger\x18\b \x01(\tR\atrigger\x12\x1a\n" +
-	"\bactor_id\x18\t \x01(\tR\bactor_id\x12\x1e\n" +
+	"\bref_name\x18\x06 \x01(\tR\bref_name\x12\x18\n" +
+	"\atrigger\x18\a \x01(\tR\atrigger\x12\x1a\n" +
+	"\bactor_id\x18\b \x01(\tR\bactor_id\x12\x1e\n" +
 	"\n" +
-	"actor_name\x18\n" +
-	" \x01(\tR\n" +
+	"actor_name\x18\t \x01(\tR\n" +
 	"actor_name\x12$\n" +
-	"\rgithub_run_id\x18\x14 \x01(\tR\rgithub_run_id\x12\x1e\n" +
+	"\rgithub_run_id\x18\n" +
+	" \x01(\tR\rgithub_run_id\x12\x1e\n" +
 	"\n" +
-	"github_job\x18\x15 \x01(\tR\n" +
+	"github_job\x18\v \x01(\tR\n" +
 	"github_job\x12.\n" +
-	"\x12github_run_attempt\x18\x16 \x01(\tR\x12github_run_attempt\x12<\n" +
-	"\x19github_runner_tracking_id\x18\x17 \x01(\tR\x19github_runner_tracking_id\x120\n" +
-	"\x13github_workflow_ref\x18\x18 \x01(\tR\x13github_workflow_ref\x120\n" +
-	"\x13github_workflow_sha\x18\x19 \x01(\tR\x13github_workflow_sha\x12(\n" +
-	"\x0fgithub_workflow\x18\x1a \x01(\tR\x0fgithub_workflow\x12$\n" +
-	"\rgitlab_job_id\x18\x1e \x01(\tR\rgitlab_job_id\x12(\n" +
-	"\x0fgitlab_job_name\x18\x1f \x01(\tR\x0fgitlab_job_name\x124\n" +
-	"\x15gitlab_config_ref_uri\x18  \x01(\tR\x15gitlab_config_ref_uri\"\xd1\x05\n" +
+	"\x12github_run_attempt\x18\f \x01(\tR\x12github_run_attempt\x12<\n" +
+	"\x19github_runner_tracking_id\x18\r \x01(\tR\x19github_runner_tracking_id\x120\n" +
+	"\x13github_workflow_ref\x18\x0e \x01(\tR\x13github_workflow_ref\x120\n" +
+	"\x13github_workflow_sha\x18\x0f \x01(\tR\x13github_workflow_sha\x12(\n" +
+	"\x0fgithub_workflow\x18\x10 \x01(\tR\x0fgithub_workflow\x12$\n" +
+	"\rgitlab_job_id\x18\x11 \x01(\tR\rgitlab_job_id\x12(\n" +
+	"\x0fgitlab_job_name\x18\x12 \x01(\tR\x0fgitlab_job_name\x124\n" +
+	"\x15gitlab_config_ref_uri\x18\x13 \x01(\tR\x15gitlab_config_ref_uri\"\xd1\x05\n" +
 	"\vEventRecord\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x12\n" +
