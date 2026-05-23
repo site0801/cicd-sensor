@@ -12,6 +12,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink/sinktest"
 	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
@@ -154,7 +155,7 @@ func TestCollectorService_IngestLog(t *testing.T) {
 				t.Fatalf("%s batches: got %d, want 1", tt.sink.Name(), len(batches))
 			}
 			batch := batches[0]
-			if batch.LogKind != sink.LogKindJobDetection {
+			if batch.LogKind != logkind.JobDetection {
 				t.Fatalf("log kind: got %q, want detection", batch.LogKind)
 			}
 			if batch.Scope != sink.ScopeHost {
@@ -264,8 +265,8 @@ func callCollector(t *testing.T, dst *sinktest.Sink, batch *managerv1.IngestLogB
 	t.Helper()
 	var router *OutputRouter
 	if dst != nil {
-		router = newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-			sink.LogKindJobDetection: dst,
+		router = newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+			logkind.JobDetection: dst,
 		})
 	}
 	server := NewServer(testLogger, ":0", testManagerTokens, &ServedConfig{}, "", &StartupConfig{}, router)

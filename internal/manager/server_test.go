@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink/sinktest"
 )
@@ -20,8 +21,8 @@ func TestServerRun_StopsOnContextCancel(t *testing.T) {
 		t.Fatalf("load startup config: %v", err)
 	}
 	dst := sinktest.New("primary")
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
 	server := NewServer(testLogger, startupCfg.BindAddress(), testManagerTokens, &ServedConfig{ConfigRevision: startupCfg.Revision}, "", &startupCfg, router)
 	ctx, cancel := context.WithCancel(context.Background())

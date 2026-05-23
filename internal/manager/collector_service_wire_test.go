@@ -12,6 +12,7 @@ import (
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/managerclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink/sinktest"
 	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
@@ -20,8 +21,8 @@ import (
 
 func TestCollectorWire_HappyPath_WritesToConfiguredSink(t *testing.T) {
 	dst := sinktest.New("s3-prod")
-	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	}))
 	defer cleanup()
 
@@ -42,8 +43,8 @@ func TestCollectorWire_HappyPath_WritesToConfiguredSink(t *testing.T) {
 
 func TestCollectorWire_ManagerClientRoundTrip(t *testing.T) {
 	dst := sinktest.New("s3-prod")
-	server := NewServer(testLogger, ":0", testManagerTokens, &ServedConfig{}, "", &StartupConfig{}, newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	server := NewServer(testLogger, ":0", testManagerTokens, &ServedConfig{}, "", &StartupConfig{}, newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	}))
 	server.now = func() time.Time {
 		return time.Date(2026, 4, 26, 7, 0, 0, 0, time.UTC)
@@ -78,8 +79,8 @@ func TestCollectorWire_ManagerClientRoundTrip(t *testing.T) {
 func TestCollectorWire_SinkThrottle_ReturnsResourceExhausted(t *testing.T) {
 	bad := sinktest.New("bad")
 	bad.SetErrors(sink.ErrThrottled, sink.ErrThrottled, sink.ErrThrottled)
-	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: bad,
+	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: bad,
 	}))
 	defer cleanup()
 
@@ -91,8 +92,8 @@ func TestCollectorWire_SinkThrottle_ReturnsResourceExhausted(t *testing.T) {
 
 func TestCollectorWire_DuplicateFlushAt_PreservesFlushTimestamp(t *testing.T) {
 	dst := sinktest.New("s3-prod")
-	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	}))
 	defer cleanup()
 
@@ -121,8 +122,8 @@ func TestCollectorWire_DuplicateFlushAt_PreservesFlushTimestamp(t *testing.T) {
 }
 
 func TestCollectorWire_UnauthorizedToken_ReturnsUnauthenticated(t *testing.T) {
-	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: sinktest.New("s3-prod"),
+	client, cleanup := newCollectorWireClient(t, testManagerSecret, newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: sinktest.New("s3-prod"),
 	}))
 	defer cleanup()
 

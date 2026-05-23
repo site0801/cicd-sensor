@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 )
 
 func TestObjectKey(t *testing.T) {
@@ -67,7 +68,7 @@ func TestPubSubAttributes(t *testing.T) {
 	want := map[string]string{
 		"content_type": "application/json",
 		"flush_at":     "20260426073045123",
-		"log_kind":     string(LogKindJobDetection),
+		"log_kind":     string(logkind.JobDetection),
 		"scope":        string(ScopeHost),
 	}
 	for key, value := range want {
@@ -114,7 +115,7 @@ func TestFormatFlushAt(t *testing.T) {
 
 func objectKeyTestBatch() IngestLogBatch {
 	return IngestLogBatch{
-		LogKind: LogKindJobDetection,
+		LogKind: logkind.JobDetection,
 		Identity: jobcontext.GitHubJobIdentity(
 			"github.com",
 			"acme/example",

@@ -8,6 +8,8 @@ import (
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/googleapi"
+
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 )
 
 type gcsSink struct {
@@ -78,9 +80,9 @@ func (s *gcsSink) Name() string {
 	return formatObjectURI("gs", s.bucket, s.prefix)
 }
 
-func (s *gcsSink) FlushPolicy(logKind LogKind) FlushPolicy {
+func (s *gcsSink) FlushPolicy(logKind logkind.LogKind) FlushPolicy {
 	switch logKind {
-	case LogKindJobRuntimeTelemetry:
+	case logkind.JobRuntimeTelemetry:
 		return FlushPolicy{
 			FlushThresholdBytes:  gcsRuntimeTelemetryFlushBytes,
 			FlushIntervalSeconds: gcsRuntimeTelemetryFlushSeconds,

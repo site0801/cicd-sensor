@@ -7,6 +7,7 @@
 package logv1
 
 import (
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
@@ -23,14 +24,17 @@ const (
 )
 
 type JobRuntimeTelemetryLogEntry struct {
-	state     protoimpl.MessageState `protogen:"open.v1"`
-	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Timestamp     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
+	LogType       *string                `protobuf:"bytes,2,opt,name=log_type,proto3,oneof" json:"log_type,omitempty"`
+	SchemaVersion *string                `protobuf:"bytes,3,opt,name=schema_version,proto3,oneof" json:"schema_version,omitempty"`
+	AgentVersion  *string                `protobuf:"bytes,4,opt,name=agent_version,proto3,oneof" json:"agent_version,omitempty"`
 	// UUIDv7 for this runtime telemetry log row.
-	LogId          *string        `protobuf:"bytes,2,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
-	Job            *JobLogContext `protobuf:"bytes,3,opt,name=job,proto3" json:"job,omitempty"`
-	Scope          *string        `protobuf:"bytes,4,opt,name=scope,proto3,oneof" json:"scope,omitempty"`
-	ConfigRevision *string        `protobuf:"bytes,5,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
-	Event          *EventRecord   `protobuf:"bytes,7,opt,name=event,proto3" json:"event,omitempty"`
+	LogId          *string        `protobuf:"bytes,5,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
+	Job            *JobLogContext `protobuf:"bytes,6,opt,name=job,proto3" json:"job,omitempty"`
+	Scope          *string        `protobuf:"bytes,7,opt,name=scope,proto3,oneof" json:"scope,omitempty"`
+	ConfigRevision *string        `protobuf:"bytes,8,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
+	Event          *EventRecord   `protobuf:"bytes,9,opt,name=event,proto3" json:"event,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -72,6 +76,27 @@ func (x *JobRuntimeTelemetryLogEntry) GetTimestamp() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *JobRuntimeTelemetryLogEntry) GetLogType() string {
+	if x != nil && x.LogType != nil {
+		return *x.LogType
+	}
+	return ""
+}
+
+func (x *JobRuntimeTelemetryLogEntry) GetSchemaVersion() string {
+	if x != nil && x.SchemaVersion != nil {
+		return *x.SchemaVersion
+	}
+	return ""
+}
+
+func (x *JobRuntimeTelemetryLogEntry) GetAgentVersion() string {
+	if x != nil && x.AgentVersion != nil {
+		return *x.AgentVersion
+	}
+	return ""
+}
+
 func (x *JobRuntimeTelemetryLogEntry) GetLogId() string {
 	if x != nil && x.LogId != nil {
 		return *x.LogId
@@ -111,14 +136,21 @@ var File_cicd_sensor_log_v1_runtime_telemetry_proto protoreflect.FileDescriptor
 
 const file_cicd_sensor_log_v1_runtime_telemetry_proto_rawDesc = "" +
 	"\n" +
-	"*cicd_sensor/log/v1/runtime_telemetry.proto\x12\x12cicd_sensor.log.v1\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x02\n" +
+	"*cicd_sensor/log/v1/runtime_telemetry.proto\x12\x12cicd_sensor.log.v1\x1a\x1bbuf/validate/validate.proto\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x89\x04\n" +
 	"\x1bJobRuntimeTelemetryLogEntry\x128\n" +
-	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1b\n" +
-	"\x06log_id\x18\x02 \x01(\tH\x00R\x06log_id\x88\x01\x01\x123\n" +
-	"\x03job\x18\x03 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x19\n" +
-	"\x05scope\x18\x04 \x01(\tH\x01R\x05scope\x88\x01\x01\x12-\n" +
-	"\x0fconfig_revision\x18\x05 \x01(\tH\x02R\x0fconfig_revision\x88\x01\x01\x125\n" +
-	"\x05event\x18\a \x01(\v2\x1f.cicd_sensor.log.v1.EventRecordR\x05eventB\t\n" +
+	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1f\n" +
+	"\blog_type\x18\x02 \x01(\tH\x00R\blog_type\x88\x01\x01\x126\n" +
+	"\x0eschema_version\x18\x03 \x01(\tB\t\xbaH\x06r\x04\n" +
+	"\x02v1H\x01R\x0eschema_version\x88\x01\x01\x12)\n" +
+	"\ragent_version\x18\x04 \x01(\tH\x02R\ragent_version\x88\x01\x01\x12\x1b\n" +
+	"\x06log_id\x18\x05 \x01(\tH\x03R\x06log_id\x88\x01\x01\x123\n" +
+	"\x03job\x18\x06 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x19\n" +
+	"\x05scope\x18\a \x01(\tH\x04R\x05scope\x88\x01\x01\x12-\n" +
+	"\x0fconfig_revision\x18\b \x01(\tH\x05R\x0fconfig_revision\x88\x01\x01\x125\n" +
+	"\x05event\x18\t \x01(\v2\x1f.cicd_sensor.log.v1.EventRecordR\x05eventB\v\n" +
+	"\t_log_typeB\x11\n" +
+	"\x0f_schema_versionB\x10\n" +
+	"\x0e_agent_versionB\t\n" +
 	"\a_log_idB\b\n" +
 	"\x06_scopeB\x12\n" +
 	"\x10_config_revisionB\xe1\x01\n" +

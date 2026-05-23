@@ -8,16 +8,17 @@ import (
 	"time"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink/sinktest"
 )
 
 func TestOutputRouter_Write_HappyPath(t *testing.T) {
 	dst := sinktest.New("primary")
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
-	batch := routerTestBatch(sink.LogKindJobDetection)
+	batch := routerTestBatch(logkind.JobDetection)
 
 	if err := router.Write(context.Background(), batch); err != nil {
 		t.Fatalf("write: %v", err)
@@ -35,10 +36,10 @@ func TestOutputRouter_Write_HappyPath(t *testing.T) {
 }
 
 func TestOutputRouter_Write_KindNotConfigured(t *testing.T) {
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobResult: sinktest.New("result"),
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobResult: sinktest.New("result"),
 	})
-	err := router.Write(context.Background(), routerTestBatch(sink.LogKindJobDetection))
+	err := router.Write(context.Background(), routerTestBatch(logkind.JobDetection))
 	if !errors.Is(err, errNoCollectorSinks) {
 		t.Fatalf("err: got %v, want no sinks", err)
 	}
@@ -46,7 +47,7 @@ func TestOutputRouter_Write_KindNotConfigured(t *testing.T) {
 
 func TestOutputRouter_Write_NilReceiverReturnsErr(t *testing.T) {
 	var router *OutputRouter
-	err := router.Write(context.Background(), routerTestBatch(sink.LogKindJobDetection))
+	err := router.Write(context.Background(), routerTestBatch(logkind.JobDetection))
 	if !errors.Is(err, errNoCollectorSinks) {
 		t.Fatalf("err: got %v, want no sinks", err)
 	}
@@ -55,11 +56,11 @@ func TestOutputRouter_Write_NilReceiverReturnsErr(t *testing.T) {
 func TestOutputRouter_Write_ReturnsErrThrottled(t *testing.T) {
 	dst := sinktest.New("bad")
 	dst.SetErrors(sink.ErrThrottled, sink.ErrThrottled, sink.ErrThrottled)
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
 
-	err := router.Write(context.Background(), routerTestBatch(sink.LogKindJobDetection))
+	err := router.Write(context.Background(), routerTestBatch(logkind.JobDetection))
 	if !errors.Is(err, sink.ErrThrottled) {
 		t.Fatalf("err: got %v, want throttled", err)
 	}
@@ -68,8 +69,8 @@ func TestOutputRouter_Write_ReturnsErrThrottled(t *testing.T) {
 func TestOutputRouter_Write_RetrySleepContextCanceled(t *testing.T) {
 	dst := sinktest.New("retry")
 	dst.SetErrors(sink.ErrThrottled)
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	router.sleep = func(context.Context, time.Duration) error {
@@ -77,7 +78,7 @@ func TestOutputRouter_Write_RetrySleepContextCanceled(t *testing.T) {
 		return ctx.Err()
 	}
 
-	err := router.Write(ctx, routerTestBatch(sink.LogKindJobDetection))
+	err := router.Write(ctx, routerTestBatch(logkind.JobDetection))
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("err: got %v, want context canceled", err)
 	}
@@ -89,11 +90,11 @@ func TestOutputRouter_Write_RetrySleepContextCanceled(t *testing.T) {
 func TestOutputRouter_Write_RetriesThrottledThenSucceeds(t *testing.T) {
 	dst := sinktest.New("retry")
 	dst.SetErrors(sink.ErrThrottled, nil)
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
 
-	err := router.Write(context.Background(), routerTestBatch(sink.LogKindJobDetection))
+	err := router.Write(context.Background(), routerTestBatch(logkind.JobDetection))
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -105,11 +106,11 @@ func TestOutputRouter_Write_RetriesThrottledThenSucceeds(t *testing.T) {
 func TestOutputRouter_Write_ExhaustsRetriesOnPersistentThrottle(t *testing.T) {
 	dst := sinktest.New("retry")
 	dst.SetErrors(sink.ErrThrottled, sink.ErrThrottled, sink.ErrThrottled)
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
 
-	err := router.Write(context.Background(), routerTestBatch(sink.LogKindJobDetection))
+	err := router.Write(context.Background(), routerTestBatch(logkind.JobDetection))
 	if !errors.Is(err, sink.ErrThrottled) {
 		t.Fatalf("err: got %v, want throttled", err)
 	}
@@ -124,9 +125,9 @@ func TestOutputRouter_OutputSettings_UsesSinkFlushPolicy(t *testing.T) {
 	telemetry := sinktest.New("telemetry")
 	telemetry.SetFlushPolicy(sink.FlushPolicy{FlushThresholdBytes: 4 * 1024 * 1024, FlushIntervalSeconds: 60})
 
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection:        detection,
-		sink.LogKindJobRuntimeTelemetry: telemetry,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection:        detection,
+		logkind.JobRuntimeTelemetry: telemetry,
 	})
 
 	got := router.OutputSettings()
@@ -189,8 +190,8 @@ func TestBuildOutputs_ClosesCreatedSinksOnBuildFailure(t *testing.T) {
 
 func TestOutputRouter_CloseClosesSinksOnce(t *testing.T) {
 	dst := sinktest.New("primary")
-	router := newOutputRouterForTest(map[sink.LogKind]sink.Sink{
-		sink.LogKindJobDetection: dst,
+	router := newOutputRouterForTest(map[logkind.LogKind]sink.Sink{
+		logkind.JobDetection: dst,
 	})
 
 	if err := router.Close(); err != nil {
@@ -220,7 +221,7 @@ func TestRetryDelay(t *testing.T) {
 	}
 }
 
-func newOutputRouterForTest(perKind map[sink.LogKind]sink.Sink) *OutputRouter {
+func newOutputRouterForTest(perKind map[logkind.LogKind]sink.Sink) *OutputRouter {
 	sinks := make([]sink.Sink, 0, len(perKind))
 	for _, dst := range perKind {
 		sinks = append(sinks, dst)
@@ -234,7 +235,7 @@ func newOutputRouterForTest(perKind map[sink.LogKind]sink.Sink) *OutputRouter {
 	}
 }
 
-func routerTestBatch(logKind sink.LogKind) sink.IngestLogBatch {
+func routerTestBatch(logKind logkind.LogKind) sink.IngestLogBatch {
 	return sink.IngestLogBatch{
 		LogKind: logKind,
 		Identity: jobcontext.GitHubJobIdentity(

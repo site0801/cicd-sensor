@@ -8,8 +8,10 @@ import (
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/observations"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobevent"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	logv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/log/v1"
 	"github.com/cicd-sensor/cicd-sensor/internal/protoconv"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
 
 type DetectionLogInput struct {
@@ -36,6 +38,9 @@ func MarshalDetectionLogEntry(in DetectionLogInput) ([]byte, error) {
 	}
 	message := &logv1.JobDetectionLogEntry{
 		Timestamp:           timestamppb.New(timestamp.UTC()),
+		LogType:             proto.String(string(logkind.JobDetection)),
+		SchemaVersion:       proto.String(logkind.JobDetectionSchemaVersion),
+		AgentVersion:        proto.String(version.Current),
 		LogId:               proto.String(newLogID()),
 		Job:                 protoconv.ToJobLogContext(in.Identity, in.Metadata, in.RunnerKind),
 		Scope:               proto.String(string(in.Scope)),

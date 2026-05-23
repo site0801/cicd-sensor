@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
 	"github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1/managerv1connect"
@@ -122,14 +123,14 @@ func validateFlushAt(ts *timestamppb.Timestamp) error {
 }
 
 // outputLogKind maps the wire enum to the stable log kind used by sinks.
-func outputLogKind(kind managerv1.LogKind) (sink.LogKind, error) {
+func outputLogKind(kind managerv1.LogKind) (logkind.LogKind, error) {
 	switch kind {
 	case managerv1.LogKind_LOG_KIND_JOB_DETECTION:
-		return sink.LogKindJobDetection, nil
+		return logkind.JobDetection, nil
 	case managerv1.LogKind_LOG_KIND_JOB_RUNTIME_TELEMETRY:
-		return sink.LogKindJobRuntimeTelemetry, nil
+		return logkind.JobRuntimeTelemetry, nil
 	case managerv1.LogKind_LOG_KIND_JOB_RESULT:
-		return sink.LogKindJobResult, nil
+		return logkind.JobResult, nil
 	default:
 		return "", fmt.Errorf("unsupported log_kind: %s", kind.String())
 	}

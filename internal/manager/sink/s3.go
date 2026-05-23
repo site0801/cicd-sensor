@@ -12,6 +12,8 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
+
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 )
 
 type s3Sink struct {
@@ -85,9 +87,9 @@ func (s *s3Sink) Name() string {
 	return formatObjectURI("s3", s.bucket, s.prefix)
 }
 
-func (s *s3Sink) FlushPolicy(logKind LogKind) FlushPolicy {
+func (s *s3Sink) FlushPolicy(logKind logkind.LogKind) FlushPolicy {
 	switch logKind {
-	case LogKindJobRuntimeTelemetry:
+	case logkind.JobRuntimeTelemetry:
 		return FlushPolicy{
 			FlushThresholdBytes:  s3RuntimeTelemetryFlushBytes,
 			FlushIntervalSeconds: s3RuntimeTelemetryFlushSeconds,

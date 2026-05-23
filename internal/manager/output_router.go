@@ -8,6 +8,7 @@ import (
 	"math/rand/v2"
 	"time"
 
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 	managerv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1"
 )
@@ -24,7 +25,7 @@ var errNoCollectorSinks = errors.New("collector sinks are not configured")
 // OutputRouter owns the manager sinks selected by manager.yaml output routing.
 type OutputRouter struct {
 	logger  *slog.Logger
-	perKind map[sink.LogKind]sink.Sink
+	perKind map[logkind.LogKind]sink.Sink
 	sinks   []sink.Sink
 
 	sleep  func(context.Context, time.Duration) error
@@ -54,9 +55,9 @@ func BuildOutputs(ctx context.Context, logger *slog.Logger, sinks SinksConfig, o
 		createdSinks = append(createdSinks, dst)
 	}
 
-	perKind := make(map[sink.LogKind]sink.Sink, len(output))
+	perKind := make(map[logkind.LogKind]sink.Sink, len(output))
 	for logName, logOutput := range output {
-		logKind, ok := sink.ParseLogKind(logName)
+		logKind, ok := logkind.Parse(logName)
 		if !ok {
 			if closeErr := closeSinks(createdSinks); closeErr != nil {
 				return nil, fmt.Errorf("unknown output log kind %q (cleanup: %v)", logName, closeErr)
@@ -106,13 +107,13 @@ func (r *OutputRouter) OutputSettings() *managerv1.OutputSettings {
 		return nil
 	}
 	return &managerv1.OutputSettings{
-		JobDetectionLog:        r.outputSetting(sink.LogKindJobDetection),
-		JobRuntimeTelemetryLog: r.outputSetting(sink.LogKindJobRuntimeTelemetry),
-		JobResultLog:           r.outputSetting(sink.LogKindJobResult),
+		JobDetectionLog:        r.outputSetting(logkind.JobDetection),
+		JobRuntimeTelemetryLog: r.outputSetting(logkind.JobRuntimeTelemetry),
+		JobResultLog:           r.outputSetting(logkind.JobResult),
 	}
 }
 
-func (r *OutputRouter) outputSetting(logKind sink.LogKind) *managerv1.OutputSetting {
+func (r *OutputRouter) outputSetting(logKind logkind.LogKind) *managerv1.OutputSetting {
 	dst := r.perKind[logKind]
 	if dst == nil {
 		return &managerv1.OutputSetting{}

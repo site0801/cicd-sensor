@@ -8,8 +8,10 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/observations"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	logv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/log/v1"
 	"github.com/cicd-sensor/cicd-sensor/internal/rule"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
 
 func TestMarshalJobResultLogEntryBuildsFinalSummary(t *testing.T) {
@@ -155,6 +157,75 @@ func TestMarshalJobResultLogEntryEmitsExplicitZeroCounters(t *testing.T) {
 	}
 	if !strings.Contains(raw, `"events_dropped":0`) {
 		t.Fatalf("events_dropped: want explicit 0 in JSON, got %s", raw)
+	}
+}
+
+func TestMarshalJobResultLogEntryStampsLogTypeAndVersions(t *testing.T) {
+	t.Parallel()
+
+	payload, err := MarshalJobResultLogEntry(JobResultLogInput{ScopeLogContext: testScopeLogContext()})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var got logv1.JobResultLogEntry
+	if err := protojson.Unmarshal(payload, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if got.GetLogType() != string(logkind.JobResult) {
+		t.Errorf("log_type: got %q, want %q", got.GetLogType(), string(logkind.JobResult))
+	}
+	if got.GetSchemaVersion() != "v1" {
+		t.Errorf("schema_version: got %q, want %q", got.GetSchemaVersion(), "v1")
+	}
+	if got.GetAgentVersion() != version.Current {
+		t.Errorf("agent_version: got %q, want %q", got.GetAgentVersion(), version.Current)
+	}
+}
+
+func TestMarshalJobResultLogEntryComputesDuration(t *testing.T) {
+	t.Parallel()
+
+	start := time.Date(2026, 5, 23, 10, 0, 0, 0, time.UTC)
+	end := start.Add(5 * time.Minute)
+	payload, err := MarshalJobResultLogEntry(JobResultLogInput{
+		ScopeLogContext: testScopeLogContext(),
+		StartedAt:       start,
+		FinalizedAt:     end,
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var got logv1.JobResultLogEntry
+	if err := protojson.Unmarshal(payload, &got); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if !got.GetStartTime().AsTime().Equal(start) {
+		t.Errorf("start_time: got %v, want %v", got.GetStartTime().AsTime(), start)
+	}
+	if !got.GetEndTime().AsTime().Equal(end) {
+		t.Errorf("end_time: got %v, want %v", got.GetEndTime().AsTime(), end)
+	}
+	if got.GetDurationS() != 300 {
+		t.Errorf("duration_s: got %d, want 300", got.GetDurationS())
+	}
+}
+
+func TestMarshalJobResultLogEntryOmitsLifecycleWhenStartedAtZero(t *testing.T) {
+	t.Parallel()
+
+	payload, err := MarshalJobResultLogEntry(JobResultLogInput{
+		ScopeLogContext: testScopeLogContext(),
+		FinalizedAt:     time.Date(2026, 5, 23, 10, 5, 0, 0, time.UTC),
+	})
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	raw := string(payload)
+	if strings.Contains(raw, `"start_time"`) {
+		t.Errorf("start_time should be omitted when StartedAt is zero: %s", raw)
+	}
+	if strings.Contains(raw, `"duration_s"`) {
+		t.Errorf("duration_s should be omitted when StartedAt is zero: %s", raw)
 	}
 }
 

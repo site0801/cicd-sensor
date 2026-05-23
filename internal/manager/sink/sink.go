@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 )
 
 // ErrThrottled marks provider throttling that should be surfaced to agents as
@@ -14,24 +15,6 @@ import (
 var ErrThrottled = errors.New("sink throttled")
 
 const ContentTypeGzip = "application/gzip"
-
-// LogKind is the manager output key used in manager.yaml and object paths.
-type LogKind string
-
-const (
-	LogKindJobDetection        LogKind = "job_detection_log"
-	LogKindJobRuntimeTelemetry LogKind = "job_runtime_telemetry_log"
-	LogKindJobResult           LogKind = "job_result_log"
-)
-
-func ParseLogKind(value string) (LogKind, bool) {
-	switch LogKind(value) {
-	case LogKindJobDetection, LogKindJobRuntimeTelemetry, LogKindJobResult:
-		return LogKind(value), true
-	default:
-		return "", false
-	}
-}
 
 // Scope is the manager output scope segment carried by one ingest batch.
 type Scope string
@@ -52,7 +35,7 @@ type FlushPolicy struct {
 // Sinks decide how to route it: object storage builds a deterministic key,
 // while Pub/Sub publishes the body with attributes.
 type IngestLogBatch struct {
-	LogKind    LogKind
+	LogKind    logkind.LogKind
 	Identity   jobcontext.JobIdentity
 	Scope      Scope
 	FlushAt    time.Time
@@ -73,5 +56,5 @@ type Sink interface {
 
 	// FlushPolicy returns the agent-side batching policy preferred by this
 	// destination for one log kind.
-	FlushPolicy(logKind LogKind) FlushPolicy
+	FlushPolicy(logKind logkind.LogKind) FlushPolicy
 }

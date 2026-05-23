@@ -75,7 +75,7 @@ build-linux:
 			CGO_ENABLED=0 GOOS=linux GOARCH=$$arch $(GO) build $(GO_MOD_FLAG) \
 				-trimpath \
 				-buildvcs=false \
-				-ldflags "-s -w -X main.version=$(VERSION)" \
+				-ldflags "-s -w -X main.version=$(VERSION) -X github.com/cicd-sensor/cicd-sensor/internal/version.Current=$(VERSION)" \
 				-o "$(DIST_DIR)/$${bin}_linux_$${arch}" \
 				"./cmd/$$bin"; \
 		done; \

@@ -9,6 +9,8 @@ import (
 	"log/slog"
 
 	"cloud.google.com/go/pubsub/v2"
+
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 )
 
 type pubsubSink struct {
@@ -113,8 +115,8 @@ func (s *pubsubSink) Name() string {
 	return "pubsub://" + s.projectID + "/" + s.topicName
 }
 
-func (s *pubsubSink) FlushPolicy(logKind LogKind) FlushPolicy {
-	if logKind == LogKindJobRuntimeTelemetry {
+func (s *pubsubSink) FlushPolicy(logKind logkind.LogKind) FlushPolicy {
+	if logKind == logkind.JobRuntimeTelemetry {
 		return FlushPolicy{
 			FlushThresholdBytes:  pubsubRuntimeTelemetryFlushBytes,
 			FlushIntervalSeconds: pubsubRuntimeTelemetryFlushSeconds,

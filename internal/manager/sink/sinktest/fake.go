@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	"github.com/cicd-sensor/cicd-sensor/internal/manager/sink"
 )
 
@@ -59,7 +60,7 @@ func (s *Sink) Close() error {
 	return nil
 }
 
-func (s *Sink) FlushPolicy(sink.LogKind) sink.FlushPolicy {
+func (s *Sink) FlushPolicy(logkind.LogKind) sink.FlushPolicy {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.policy == (sink.FlushPolicy{}) {

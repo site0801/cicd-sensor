@@ -38,6 +38,7 @@ func (s *JobScopeState) EmitJobResultLog(ctx context.Context, in JobResultLogInp
 		ResolvedRules:  s.ResolvedRules,
 		Snapshot:       s.ObservationSnapshot(),
 		FinalizeReason: reason,
+		StartedAt:      in.StartedAt,
 		FinalizedAt:    finalizedAt,
 	})
 	if err != nil {

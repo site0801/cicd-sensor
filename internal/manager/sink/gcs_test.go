@@ -5,27 +5,29 @@ import (
 	"testing"
 
 	"google.golang.org/api/googleapi"
+
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 )
 
 func TestGCSFlushPolicy(t *testing.T) {
 	tests := []struct {
 		name    string
-		logKind LogKind
+		logKind logkind.LogKind
 		want    FlushPolicy
 	}{
 		{
 			name:    "detection is immediate",
-			logKind: LogKindJobDetection,
+			logKind: logkind.JobDetection,
 			want:    FlushPolicy{FlushThresholdBytes: 1, FlushIntervalSeconds: 1},
 		},
 		{
 			name:    "telemetry batches for object storage",
-			logKind: LogKindJobRuntimeTelemetry,
+			logKind: logkind.JobRuntimeTelemetry,
 			want:    FlushPolicy{FlushThresholdBytes: 128 * 1024 * 1024, FlushIntervalSeconds: 60},
 		},
 		{
 			name:    "result is immediate",
-			logKind: LogKindJobResult,
+			logKind: logkind.JobResult,
 			want:    FlushPolicy{FlushThresholdBytes: 1, FlushIntervalSeconds: 1},
 		},
 	}

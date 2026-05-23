@@ -8,9 +8,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/observations"
+	"github.com/cicd-sensor/cicd-sensor/internal/logkind"
 	logv1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/log/v1"
 	"github.com/cicd-sensor/cicd-sensor/internal/protoconv"
 	"github.com/cicd-sensor/cicd-sensor/internal/rule"
+	"github.com/cicd-sensor/cicd-sensor/internal/version"
 )
 
 type JobResultLogInput struct {
@@ -19,6 +21,7 @@ type JobResultLogInput struct {
 	ResolvedRules  rule.ResolvedRules
 	Snapshot       observations.StateSnapshot
 	FinalizeReason string
+	StartedAt      time.Time
 	FinalizedAt    time.Time
 }
 
@@ -27,8 +30,19 @@ func MarshalJobResultLogEntry(in JobResultLogInput) ([]byte, error) {
 	if finalizedAt.IsZero() {
 		finalizedAt = time.Now()
 	}
+	var startTimePB, endTimePB *timestamppb.Timestamp
+	var durationS *int64
+	endTimePB = timestamppb.New(finalizedAt.UTC())
+	if !in.StartedAt.IsZero() {
+		startTimePB = timestamppb.New(in.StartedAt.UTC())
+		secs := int64(finalizedAt.Sub(in.StartedAt).Seconds())
+		durationS = proto.Int64(secs)
+	}
 	message := &logv1.JobResultLogEntry{
 		Timestamp:       timestamppb.New(finalizedAt.UTC()),
+		LogType:         proto.String(string(logkind.JobResult)),
+		SchemaVersion:   proto.String(logkind.JobResultSchemaVersion),
+		AgentVersion:    proto.String(version.Current),
 		LogId:           proto.String(newLogID()),
 		Job:             protoconv.ToJobLogContext(in.Identity, in.Metadata, in.RunnerKind),
 		Scope:           proto.String(string(in.Scope)),
@@ -40,6 +54,9 @@ func MarshalJobResultLogEntry(in JobResultLogInput) ([]byte, error) {
 		Detections:      detectedRuleSummaryProtos(in.Snapshot),
 		EventsTotal:     proto.Uint32(uint32Counter(in.Snapshot.Counters.EventsTotal)),
 		EventsDropped:   proto.Uint32(uint32Counter(in.Snapshot.Counters.EventsDropped)),
+		StartTime:       startTimePB,
+		EndTime:         endTimePB,
+		DurationS:       durationS,
 		FinalizeReason:  proto.String(in.FinalizeReason),
 	}
 	return logJSONMarshal.Marshal(message)
