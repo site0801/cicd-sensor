@@ -30,8 +30,7 @@ The Manager fetches and verifies baseline rules.
 
 cicd-sensor releases are available from [cicd-sensor/cicd-sensor releases](https://github.com/cicd-sensor/cicd-sensor/releases).
 
-This guide uses `/opt/cicd-sensor` as the fixed install path.
-The systemd units, hook scripts, and manager token examples all assume this path.
+This guide uses `/opt/cicd-sensor` as the fixed install path for cicd-sensor binaries and hook scripts.
 
 The release tarball ships architecture-suffixed binaries; rename them to the canonical names below so the systemd units resolve them:
 
@@ -48,47 +47,36 @@ sudo mv /opt/cicd-sensor/cicd-sensorctl-linux-<arch> /opt/cicd-sensor/cicd-senso
   cicd-sensor
   cicd-sensor-manager
   cicd-sensorctl
-  manager-token
 ```
 
 ## User / root execution model
 
-Do not create a dedicated non-root Linux user for cicd-sensor.
-Run the Agent and Docker proxy as the same user, usually root.
+This guide runs the Agent and Docker proxy as root.
 
-Reasons:
-
-- The Agent needs access to eBPF, cgroup, and process telemetry.
-- The Docker proxy uses peer UID checks when connecting to Agent internal endpoints.
-- The Agent socket must be reachable by any user on the runner host.
-
-The socket file's Unix permissions are not used to restrict which users can connect.
-For endpoints that require authorization, the Agent validates the request using the peer UID / PID and cgroup context.
+The Agent needs root-equivalent privileges for eBPF, cgroup, and process telemetry.
+The Docker proxy and Agent must also run with the same privileges because the proxy uses peer UID checks when calling Agent internal endpoints.
 
 ## Manager token
 
-Do not write the manager token into a config file.
-Use one of these two methods.
-
-| Method | How to set it | Notes |
-| --- | --- | --- |
-| Environment variable | `CICD_SENSOR_MANAGER_TOKEN=...` | Useful with systemd `EnvironmentFile=` or secret-manager integration |
-| Token file | `--manager-token-file /path/to/token` | Does not expose the token value on the command line. Recommended for systemd units. |
-
-When using a token file:
+Create the manager token source file under `/etc/cicd-sensor/`.
 
 ```sh
-sudo install -d -m 0755 /opt/cicd-sensor
-sudo sh -c 'printf "%s\n" "sk_cs_..." > /opt/cicd-sensor/manager-token'
-sudo chmod 0600 /opt/cicd-sensor/manager-token
+sudo install -d -m 0750 /etc/cicd-sensor
+echo "MANAGER_TOKEN_HERE" | sudo tee /etc/cicd-sensor/manager-token >/dev/null
+sudo chmod 0600 /etc/cicd-sensor/manager-token
+sudo chown root:root /etc/cicd-sensor/manager-token
 ```
 
-When using an environment variable:
+For systemd, load it as a service credential:
 
 ```ini
 [Service]
-EnvironmentFile=/opt/cicd-sensor/agent.env
+LoadCredential=manager_token:/etc/cicd-sensor/manager-token
 ```
+
+systemd copies the source file into a service-specific runtime credential directory and sets `CREDENTIALS_DIRECTORY`.
+Pass that runtime copy to cicd-sensor with `--manager-token-file ${CREDENTIALS_DIRECTORY}/manager_token`.
+The complete service example below includes both settings.
 
 ## Sensor startup
 
@@ -113,11 +101,12 @@ IgnoreOnIsolate=yes
 Type=simple
 RuntimeDirectory=cicd-sensor
 RuntimeDirectoryMode=0755
+LoadCredential=manager_token:/etc/cicd-sensor/manager-token
 ExecStart=/opt/cicd-sensor/cicd-sensor agent start \
   --provider github \
   --runner machine \
   --manager-url https://cicd-sensor-manager.example.com \
-  --manager-token-file /opt/cicd-sensor/manager-token
+  --manager-token-file ${CREDENTIALS_DIRECTORY}/manager_token
 Restart=always
 RestartSec=5s
 NoNewPrivileges=yes
@@ -140,9 +129,6 @@ For GitLab CI/CD, change `--provider github` to `--provider gitlab`.
 `RefuseManualStop=yes` rejects manual `systemctl stop`.
 Remove it if your maintenance workflow normally uses stop / restart.
 
-Additional sandboxing such as `ProtectSystem=strict`, `ProtectProc=...`, `CapabilityBoundingSet=...`, or `SystemCallFilter=...` may break eBPF loading, cgroup access, or process / network / file telemetry.
-Enable additional hardening only after validating it with real runner workloads.
-
 ## Docker proxy
 
 Self-hosted Machine Runners assume dockerd.
@@ -158,7 +144,7 @@ docker client
 ```
 
 Run the Docker proxy as the same user as the Agent, usually root.
-If the Agent and proxy run as different users, internal requests may be rejected.
+If the Agent and proxy run as different users, Agent internal endpoints reject proxy requests.
 
 ```ini
 # /etc/systemd/system/cicd-sensor-docker-proxy.service
