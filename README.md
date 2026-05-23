@@ -17,15 +17,15 @@
 
 <hr>
 
-CI/CD Pipelines build, release, and deploy software — and they hold the keys to do it: cloud credentials, signing keys, registry tokens. That makes them the prize.
+CI/CD Pipelines build, release, deploy software, and manage cloud infrastructure — and they hold the keys to do it: cloud credentials, signing keys, registry tokens. That makes them the prize.
 
 Entering 2026, supply chain incidents are accelerating. Attackers slip *through* trusted CI/CD Pipelines, package dependencies, and container images, run **inside the job**, and disappear with the evidence when the CI/CD Pipeline ends.
 
-Every other runtime has its open-source defender — Falco, Tetragon, Tracee, Wazuh, OSQuery. CI/CD runtime has nothing. Sigstore brought us cryptographic proof of *where* and *how* an artifact was built; the next piece — *what actually ran* during the build, what it touched, where it connected — is the runtime evidence defenders still need to detect attacks and respond.
+Every other runtime has its open-source defender — Falco, Tetragon, Tracee, Wazuh, OSQuery. CI/CD runtime has nothing. Sigstore brought us cryptographic proof of *where* and *how* an artifact was built; the next piece — *what actually ran* during the job, what it touched, where it connected — is the runtime evidence defenders still need to detect attacks and respond.
 
 **That is the gap. cicd-sensor is built to close it** — using eBPF inside the CI/CD Pipeline to make runtime visible, detect attacks while they happen, and preserve the evidence teams need to respond.
 
-- **Developers — OSS or commercial — should be able to see what their own pipelines actually do, and prove it later** — process, network, and file activity across build, release, and deploy, plus a verifiable attestation predicate.
+- **Developers — OSS or commercial — should be able to see what their own pipelines actually do, and prove it later** — observing process, network, and file activity across build, release, deploy, and cloud infrastructure management, and proving it with a verifiable attestation predicate.
 - **Security teams — defending against supply chain attacks — need tools built for the runtime** — real-time detection plus the runtime logs they actually need, like Job Result, Detection, and Runtime Telemetry, giving CI/CD the detection, incident response, and forensics environment it has been missing.
 
 > [!NOTE]
