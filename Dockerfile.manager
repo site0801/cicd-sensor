@@ -7,20 +7,19 @@ FROM --platform=${BUILDPLATFORM:-linux/amd64} cgr.dev/chainguard/go:latest@sha25
 WORKDIR /src
 
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
-
-COPY . .
+COPY vendor ./vendor
+COPY cmd ./cmd
+COPY internal ./internal
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 ARG VERSION=dev
 
 ENV CGO_ENABLED=0
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,target=/root/.cache/go-build \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build \
+        -mod=vendor \
         -trimpath \
         -buildvcs=false \
         -ldflags="-s -w -X github.com/cicd-sensor/cicd-sensor/internal/version.Current=${VERSION}" \
