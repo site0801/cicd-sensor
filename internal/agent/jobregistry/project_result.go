@@ -35,6 +35,9 @@ func (jr *JobRegistry) RequestGitHubProjectResult(ctx context.Context, identity 
 		return nil, fmt.Errorf("marshal project result: %w", err)
 	}
 	body = append(body, '\n')
+	if err := projectScope.CloseDebugOutput(ctx); err != nil {
+		return nil, fmt.Errorf("close debug output before project result response: %w", err)
+	}
 
 	jr.logger.InfoContext(ctx, "github_project_result_generated",
 		"job_identity", identity,

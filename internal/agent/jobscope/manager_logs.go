@@ -2,6 +2,7 @@ package jobscope
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -149,5 +150,18 @@ func (s *JobScopeState) WriteRuntimeTelemetryLog(ctx context.Context, identity j
 }
 
 func (s *JobScopeState) FinalizeStreamingLogs(ctx context.Context) error {
-	return s.managerJobLogs.FinalizeStreamingLogs(ctx)
+	return errors.Join(
+		s.managerJobLogs.FinalizeStreamingLogs(ctx),
+		// Project result normally closes debug output before the action reads it.
+		// This covers shutdown, TTL, and other finalize paths that never request
+		// a project result.
+		s.CloseDebugOutput(ctx),
+	)
+}
+
+func (s *JobScopeState) CloseDebugOutput(ctx context.Context) error {
+	if s == nil || s.debugOutput == nil {
+		return nil
+	}
+	return s.debugOutput.Close(ctx)
 }

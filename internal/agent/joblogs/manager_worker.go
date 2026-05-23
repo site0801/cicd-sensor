@@ -94,7 +94,7 @@ func (w *managerWorker) run(requests <-chan managerOutputRequest, done chan<- st
 	}
 	recordBytes := func(record []byte) int {
 		// BuildCollectorIngestLogBatch writes each record plus one trailing
-		// newline into a JSONL buffer before compressing the request body.
+		// newline into the gzip stream, so thresholds use uncompressed JSONL bytes.
 		return len(record) + 1
 	}
 	appendRecord := func(record []byte) {

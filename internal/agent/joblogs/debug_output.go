@@ -1,8 +1,10 @@
 package joblogs
 
 import (
+	"bufio"
 	"compress/gzip"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -14,12 +16,16 @@ const DebugRuntimeTelemetryLogFilename = "job_runtime_telemetry_log.json.gz"
 const GitHubActionsDebugOutputDir = "/home/runner/work/_temp/cicd_sensor_debug"
 
 // DebugOutput writes local best-effort debug artifacts for hosted standalone
-// jobs. Each record is appended as a complete gzip member so the artifact is
-// readable even while the agent is still running.
+// jobs. Runtime telemetry is written as one gzip stream and closed when the
+// action requests the project result.
 type DebugOutput struct {
 	mu     sync.Mutex
 	logger *slog.Logger
 	dir    string
+	file   *os.File
+	bufw   *bufio.Writer
+	zw     *gzip.Writer
+	closed bool
 }
 
 func NewGitHubActionsDebugOutput(logger *slog.Logger) (*DebugOutput, error) {
@@ -40,9 +46,22 @@ func newDebugOutput(logger *slog.Logger, dir string) (*DebugOutput, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("create debug output dir %s: %w", dir, err)
 	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return nil, fmt.Errorf("open debug output root %s: %w", dir, err)
+	}
+	defer root.Close()
+	file, err := root.OpenFile(DebugRuntimeTelemetryLogFilename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o644)
+	if err != nil {
+		return nil, fmt.Errorf("open %s: %w", filepath.Join(dir, DebugRuntimeTelemetryLogFilename), err)
+	}
+	bufw := bufio.NewWriterSize(file, 256*1024)
 	return &DebugOutput{
 		logger: logger,
 		dir:    dir,
+		file:   file,
+		bufw:   bufw,
+		zw:     gzip.NewWriter(bufw),
 	}, nil
 }
 
@@ -50,7 +69,7 @@ func (o *DebugOutput) WriteRuntimeTelemetryPayload(ctx context.Context, payload 
 	if o == nil || len(payload) == 0 {
 		return nil
 	}
-	if err := o.appendGzipJSONRecord(DebugRuntimeTelemetryLogFilename, payload); err != nil {
+	if err := o.writeRuntimeTelemetryPayload(payload); err != nil {
 		if o.logger != nil {
 			o.logger.WarnContext(ctx, "debug_runtime_telemetry_write_failed",
 				"path", filepath.Join(o.dir, DebugRuntimeTelemetryLogFilename),
@@ -62,33 +81,52 @@ func (o *DebugOutput) WriteRuntimeTelemetryPayload(ctx context.Context, payload 
 	return nil
 }
 
-func (o *DebugOutput) appendGzipJSONRecord(path string, payload []byte) error {
+func (o *DebugOutput) writeRuntimeTelemetryPayload(payload []byte) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	root, err := os.OpenRoot(o.dir)
-	if err != nil {
-		return fmt.Errorf("open debug output root %s: %w", o.dir, err)
+	if o.closed {
+		return nil
 	}
-	defer root.Close()
-
-	file, err := root.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		return fmt.Errorf("open %s: %w", filepath.Join(o.dir, path), err)
-	}
-	defer file.Close()
-
-	zw := gzip.NewWriter(file)
-	if _, err := zw.Write(payload); err != nil {
-		_ = zw.Close()
+	if _, err := o.zw.Write(payload); err != nil {
 		return fmt.Errorf("write gzip payload: %w", err)
 	}
-	if _, err := zw.Write([]byte("\n")); err != nil {
-		_ = zw.Close()
+	if _, err := o.zw.Write([]byte("\n")); err != nil {
 		return fmt.Errorf("write gzip newline: %w", err)
 	}
-	if err := zw.Close(); err != nil {
-		return fmt.Errorf("close gzip writer: %w", err)
-	}
 	return nil
+}
+
+func (o *DebugOutput) Close(_ context.Context) error {
+	if o == nil {
+		return nil
+	}
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	if o.closed {
+		return nil
+	}
+	o.closed = true
+
+	var errs []error
+	if o.zw != nil {
+		if err := o.zw.Close(); err != nil {
+			errs = append(errs, fmt.Errorf("close gzip writer: %w", err))
+		}
+		o.zw = nil
+	}
+	if o.bufw != nil {
+		if err := o.bufw.Flush(); err != nil {
+			errs = append(errs, fmt.Errorf("flush debug output buffer: %w", err))
+		}
+		o.bufw = nil
+	}
+	if o.file != nil {
+		if err := o.file.Close(); err != nil {
+			errs = append(errs, fmt.Errorf("close debug output file: %w", err))
+		}
+		o.file = nil
+	}
+	return errors.Join(errs...)
 }

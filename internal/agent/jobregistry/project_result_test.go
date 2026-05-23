@@ -1,14 +1,22 @@
 package jobregistry_test
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"errors"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	jobpkg "github.com/cicd-sensor/cicd-sensor/internal/agent/job"
+	"github.com/cicd-sensor/cicd-sensor/internal/agent/joblogs"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/jobregistry"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/managerclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
+	"github.com/cicd-sensor/cicd-sensor/internal/jobevent"
 	"github.com/cicd-sensor/cicd-sensor/internal/resultdoc"
 )
 
@@ -40,6 +48,43 @@ func TestJobRegistry_RequestGitHubProjectResult_ExistingJob(t *testing.T) {
 	}
 }
 
+func TestJobRegistry_RequestGitHubProjectResult_ClosesDebugOutputBeforeReturn(t *testing.T) {
+	jr := newJobRegistry(t)
+	id := jobcontext.GitHubJobIdentity("github.com", "acme/example", "123", "build", "1", "runner-1")
+	meta := jobcontext.JobMetadata{}
+
+	if _, err := jr.ApplyGitHubProjectStart(testCtx, id, meta, "machine", 0, 0, nil, managerclient.Connection{}, nil, false, false); err != nil {
+		t.Fatalf("apply project start: %v", err)
+	}
+	job := registeredJob(jr, id)
+	if job == nil || job.ProjectScope() == nil {
+		t.Fatal("project job not registered")
+	}
+	debugDir := t.TempDir()
+	debugOutput, err := joblogs.NewDebugOutputForTesting(testLogger, debugDir)
+	if err != nil {
+		t.Fatalf("NewDebugOutputForTesting: %v", err)
+	}
+	project := job.ProjectScope()
+	project.SetDebugOutput(debugOutput)
+
+	project.WriteRuntimeTelemetryLog(testCtx, id, meta, "machine", testProjectResultEvent("event-before-result"), testLogger)
+	if _, err := jr.RequestGitHubProjectResult(testCtx, id, 0); err != nil {
+		t.Fatalf("request project result: %v", err)
+	}
+
+	body := readProjectResultDebugGzip(t, debugDir)
+	if !strings.Contains(body, "event-before-result") {
+		t.Fatalf("debug gzip does not contain pre-result event: %s", body)
+	}
+
+	project.WriteRuntimeTelemetryLog(testCtx, id, meta, "machine", testProjectResultEvent("event-after-result"), testLogger)
+	body = readProjectResultDebugGzip(t, debugDir)
+	if strings.Contains(body, "event-after-result") {
+		t.Fatalf("debug gzip contains event written after project result: %s", body)
+	}
+}
+
 func TestJobRegistry_RequestGitHubProjectResult_MissingJob(t *testing.T) {
 	jr := newJobRegistry(t)
 	id := jobcontext.GitLabJobIdentity("gitlab.com", "group/project", "missing")
@@ -62,4 +107,43 @@ func TestJobRegistry_RequestGitHubProjectResult_ProjectScopeMissing(t *testing.T
 	if !errors.Is(err, jobpkg.ErrProjectScopeMissing) {
 		t.Fatalf("request project result error: got %v, want %v", err, jobpkg.ErrProjectScopeMissing)
 	}
+}
+
+func testProjectResultEvent(id string) jobevent.EventRecord {
+	return jobevent.EventRecord{
+		ID:        id,
+		EventKind: jobevent.NetworkConnect,
+		Timestamp: time.Date(2026, 5, 23, 1, 2, 3, 0, time.UTC),
+		Process: jobevent.ProcessSummary{
+			PID:      100,
+			ExecPath: "/usr/bin/curl",
+		},
+		Payload: map[string]any{
+			"remote_ip":   "203.0.113.10",
+			"remote_port": int64(443),
+			"protocol":    "tcp",
+		},
+	}
+}
+
+func readProjectResultDebugGzip(t *testing.T, debugDir string) string {
+	t.Helper()
+
+	file, err := os.Open(filepath.Join(debugDir, joblogs.DebugRuntimeTelemetryLogFilename))
+	if err != nil {
+		t.Fatalf("open debug gzip: %v", err)
+	}
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatalf("gzip reader: %v", err)
+	}
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("read gzip: %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatalf("close gzip reader: %v", err)
+	}
+	return string(body)
 }

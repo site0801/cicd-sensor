@@ -26,23 +26,26 @@ func BuildCollectorIngestLogBatch(batch LogBatch) (*managerv1.IngestLogBatch, er
 		return nil, fmt.Errorf("collector ingest log batch has no records")
 	}
 
-	var jsonl bytes.Buffer
+	var compressed bytes.Buffer
+	gzipWriter := gzip.NewWriter(&compressed)
+	wroteRecords := false
 	for _, record := range batch.Records {
 		if len(record) == 0 {
 			continue
 		}
-		jsonl.Write(record)
-		jsonl.WriteByte('\n')
+		wroteRecords = true
+		if _, err := gzipWriter.Write(record); err != nil {
+			_ = gzipWriter.Close()
+			return nil, fmt.Errorf("gzip collector ingest log batch record: %w", err)
+		}
+		if _, err := gzipWriter.Write([]byte("\n")); err != nil {
+			_ = gzipWriter.Close()
+			return nil, fmt.Errorf("gzip collector ingest log batch newline: %w", err)
+		}
 	}
-	if jsonl.Len() == 0 {
-		return nil, fmt.Errorf("collector ingest log batch has no non-empty records")
-	}
-
-	var compressed bytes.Buffer
-	gzipWriter := gzip.NewWriter(&compressed)
-	if _, err := gzipWriter.Write(jsonl.Bytes()); err != nil {
+	if !wroteRecords {
 		_ = gzipWriter.Close()
-		return nil, fmt.Errorf("gzip collector ingest log batch: %w", err)
+		return nil, fmt.Errorf("collector ingest log batch has no non-empty records")
 	}
 	if err := gzipWriter.Close(); err != nil {
 		return nil, fmt.Errorf("close gzip collector ingest log batch: %w", err)

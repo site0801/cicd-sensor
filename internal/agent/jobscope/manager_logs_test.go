@@ -237,39 +237,39 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_WritesDebugOutput(t *testing.T) {
 
 	event := testJobScopeNetworkEvent("event-debug-runtime", "203.0.113.30")
 	scope.WriteRuntimeTelemetryLog(context.Background(), testJobIdentity, testJobMetadata, "machine", event, testJobScopeLogger)
-
-	root, err := os.OpenRoot(debugDir)
-	if err != nil {
-		t.Fatalf("OpenRoot debug dir: %v", err)
-	}
-	defer root.Close()
-
-	file, err := root.Open(joblogs.DebugRuntimeTelemetryLogFilename)
-	if err != nil {
-		t.Fatalf("open debug telemetry: %v", err)
-	}
-	defer file.Close()
-	reader, err := gzip.NewReader(file)
-	if err != nil {
-		t.Fatalf("gzip reader: %v", err)
-	}
-	body, err := io.ReadAll(reader)
-	if err != nil {
-		t.Fatalf("read gzip: %v", err)
-	}
-	if err := reader.Close(); err != nil {
-		t.Fatalf("close gzip: %v", err)
+	if err := scope.CloseDebugOutput(context.Background()); err != nil {
+		t.Fatalf("close debug output: %v", err)
 	}
 
-	var entry logv1.JobRuntimeTelemetryLogEntry
-	if err := protojson.Unmarshal(body, &entry); err != nil {
-		t.Fatalf("unmarshal debug runtime telemetry: %v\nbody=%s", err, body)
-	}
+	entry := readDebugRuntimeTelemetryEntry(t, debugDir)
 	if got, want := entry.GetEvent().GetId(), event.ID; got != want {
 		t.Fatalf("event id: got %q, want %q", got, want)
 	}
 	if got, want := entry.GetEvent().GetNetworkConnect().GetRemoteIp(), "203.0.113.30"; got != want {
 		t.Fatalf("remote ip: got %q, want %q", got, want)
+	}
+}
+
+func TestJobScopeStateFinalizeStreamingLogs_ClosesDebugOutput(t *testing.T) {
+	t.Parallel()
+
+	debugDir := t.TempDir()
+	scope := jobscope.NewProject()
+	debugOutput, err := joblogs.NewDebugOutputForTesting(testJobScopeLogger, debugDir)
+	if err != nil {
+		t.Fatalf("NewDebugOutput: %v", err)
+	}
+	scope.SetDebugOutput(debugOutput)
+
+	event := testJobScopeNetworkEvent("event-debug-finalize", "203.0.113.31")
+	scope.WriteRuntimeTelemetryLog(context.Background(), testJobIdentity, testJobMetadata, "machine", event, testJobScopeLogger)
+	if err := scope.FinalizeStreamingLogs(context.Background()); err != nil {
+		t.Fatalf("finalize streaming logs: %v", err)
+	}
+
+	entry := readDebugRuntimeTelemetryEntry(t, debugDir)
+	if got, want := entry.GetEvent().GetId(), event.ID; got != want {
+		t.Fatalf("event id: got %q, want %q", got, want)
 	}
 }
 
@@ -334,6 +334,39 @@ func TestJobScopeStateEmitJobResultLog_FlushesFinalRecord(t *testing.T) {
 	if len(entry.NetworkConnects) != 1 || entry.NetworkConnects[0] != "203.0.113.20" {
 		t.Fatalf("network connects: got %#v, want 203.0.113.20", entry.NetworkConnects)
 	}
+}
+
+func readDebugRuntimeTelemetryEntry(t *testing.T, debugDir string) *logv1.JobRuntimeTelemetryLogEntry {
+	t.Helper()
+
+	root, err := os.OpenRoot(debugDir)
+	if err != nil {
+		t.Fatalf("OpenRoot debug dir: %v", err)
+	}
+	defer root.Close()
+
+	file, err := root.Open(joblogs.DebugRuntimeTelemetryLogFilename)
+	if err != nil {
+		t.Fatalf("open debug telemetry: %v", err)
+	}
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatalf("gzip reader: %v", err)
+	}
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("read gzip: %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatalf("close gzip: %v", err)
+	}
+
+	var entry logv1.JobRuntimeTelemetryLogEntry
+	if err := protojson.Unmarshal(body, &entry); err != nil {
+		t.Fatalf("unmarshal debug runtime telemetry: %v\nbody=%s", err, body)
+	}
+	return &entry
 }
 
 func TestJobScopeStateCorrelationHitCountFor(t *testing.T) {

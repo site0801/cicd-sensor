@@ -2,15 +2,19 @@ package listener_test
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
 
+	"github.com/cicd-sensor/cicd-sensor/internal/agent/joblogs"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobevent"
 	"github.com/cicd-sensor/cicd-sensor/internal/managerauth"
@@ -1236,7 +1240,7 @@ func TestListener_ProjectStart_UnsupportedProvider(t *testing.T) {
 }
 
 func TestListener_ProjectResult_ReturnsContent(t *testing.T) {
-	client, _, _, cleanup := setupListenerWithRegistryAndRoot(t)
+	client, registry, _, cleanup := setupListenerWithRegistryAndRoot(t)
 	defer cleanup()
 
 	startBody, _ := json.Marshal(map[string]string{
@@ -1253,6 +1257,30 @@ func TestListener_ProjectResult_ReturnsContent(t *testing.T) {
 		t.Fatalf("project/start: %v", err)
 	}
 	startResp.Body.Close()
+	id := jobcontext.GitHubJobIdentity("github.com", "acme/example", "888", "build", "1", "result_test")
+	job := listenerRegisteredJob(registry, id)
+	if job == nil || job.ProjectScope() == nil {
+		t.Fatal("project job not registered")
+	}
+	debugDir := t.TempDir()
+	debugOutput, err := joblogs.NewDebugOutputForTesting(testLogger, debugDir)
+	if err != nil {
+		t.Fatalf("NewDebugOutputForTesting: %v", err)
+	}
+	job.ProjectScope().SetDebugOutput(debugOutput)
+	job.ProjectScope().WriteRuntimeTelemetryLog(context.Background(), id, jobcontext.JobMetadata{}, "machine", jobevent.EventRecord{
+		ID:        "listener-project-result-debug",
+		EventKind: jobevent.NetworkConnect,
+		Process: jobevent.ProcessSummary{
+			PID:      100,
+			ExecPath: "/usr/bin/curl",
+		},
+		Payload: map[string]any{
+			"remote_ip":   "203.0.113.20",
+			"remote_port": int64(443),
+			"protocol":    "tcp",
+		},
+	}, testLogger)
 
 	resultBody, _ := json.Marshal(map[string]string{
 		"provider":                  "github",
@@ -1282,6 +1310,9 @@ func TestListener_ProjectResult_ReturnsContent(t *testing.T) {
 	}
 	if got.ResultSummary.Result != resultdoc.ResultNoAlert {
 		t.Fatalf("result_summary.result: got %q, want %s", got.ResultSummary.Result, resultdoc.ResultNoAlert)
+	}
+	if body := readListenerDebugGzip(t, debugDir); !strings.Contains(body, "listener-project-result-debug") {
+		t.Fatalf("debug gzip not closed/readable after project result response: %s", body)
 	}
 }
 
@@ -1346,4 +1377,26 @@ func TestListener_ProjectResult_ProjectScopeMissingReturnsConflict(t *testing.T)
 	if resultResp.StatusCode != http.StatusConflict {
 		t.Fatalf("status: got %d, want %d", resultResp.StatusCode, http.StatusConflict)
 	}
+}
+
+func readListenerDebugGzip(t *testing.T, debugDir string) string {
+	t.Helper()
+
+	file, err := os.Open(filepath.Join(debugDir, joblogs.DebugRuntimeTelemetryLogFilename))
+	if err != nil {
+		t.Fatalf("open debug gzip: %v", err)
+	}
+	defer file.Close()
+	reader, err := gzip.NewReader(file)
+	if err != nil {
+		t.Fatalf("gzip reader: %v", err)
+	}
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatalf("read gzip: %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatalf("close gzip reader: %v", err)
+	}
+	return string(body)
 }
