@@ -1,6 +1,7 @@
 package joblogs
 
 import (
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/jobevent"
@@ -16,10 +17,10 @@ type RuntimeTelemetryLogInput struct {
 func MarshalRuntimeTelemetryLogEntry(in RuntimeTelemetryLogInput) ([]byte, error) {
 	message := &logv1.JobRuntimeTelemetryLogEntry{
 		Timestamp:      timestamppb.New(in.Event.Timestamp.UTC()),
-		LogId:          newLogID(),
+		LogId:          proto.String(newLogID()),
 		Job:            protoconv.ToJobLogContext(in.Identity, in.Metadata, in.RunnerKind),
-		Scope:          string(in.Scope),
-		ConfigRevision: in.ConfigRevision,
+		Scope:          proto.String(string(in.Scope)),
+		ConfigRevision: proto.String(configRevisionOrAbsent(in.ConfigRevision)),
 		Event:          sanitizedLogEventRecord(in.Event),
 	}
 	return logJSONMarshal.Marshal(message)

@@ -4,6 +4,7 @@ import (
 	"slices"
 	"time"
 
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/observations"
@@ -28,18 +29,18 @@ func MarshalJobResultLogEntry(in JobResultLogInput) ([]byte, error) {
 	}
 	message := &logv1.JobResultLogEntry{
 		Timestamp:       timestamppb.New(finalizedAt.UTC()),
-		LogId:           newLogID(),
+		LogId:           proto.String(newLogID()),
 		Job:             protoconv.ToJobLogContext(in.Identity, in.Metadata, in.RunnerKind),
-		Scope:           string(in.Scope),
-		ConfigRevision:  in.ConfigRevision,
+		Scope:           proto.String(string(in.Scope)),
+		ConfigRevision:  proto.String(configRevisionOrAbsent(in.ConfigRevision)),
 		Rulesets:        rulesetUseProtos(in.ResolvedRules.Rules),
 		RuleModifiers:   ruleModifierUseProtos(in.RuleModifiers),
 		NetworkConnects: networkConnects(in.Snapshot.ObservationNetwork.Records),
 		Domains:         domains(in.Snapshot.ObservationDomain.Records),
 		Detections:      detectedRuleSummaryProtos(in.Snapshot),
-		EventsTotal:     uint64Counter(in.Snapshot.Counters.EventsTotal),
-		EventsDropped:   uint64Counter(in.Snapshot.Counters.EventsDropped),
-		FinalizeReason:  in.FinalizeReason,
+		EventsTotal:     proto.Uint32(uint32Counter(in.Snapshot.Counters.EventsTotal)),
+		EventsDropped:   proto.Uint32(uint32Counter(in.Snapshot.Counters.EventsDropped)),
+		FinalizeReason:  proto.String(in.FinalizeReason),
 	}
 	return logJSONMarshal.Marshal(message)
 }
@@ -88,7 +89,7 @@ func rulesetUseProtos(rules []rule.ResolvedRule) []*logv1.RulesetUse {
 			continue
 		}
 		seen[key] = struct{}{}
-		out = append(out, &logv1.RulesetUse{RulesetId: resolved.RulesetID, Revision: resolved.RulesetRevision})
+		out = append(out, &logv1.RulesetUse{RulesetId: proto.String(resolved.RulesetID), Revision: proto.String(resolved.RulesetRevision)})
 	}
 	return out
 }
@@ -104,7 +105,7 @@ func ruleModifierUseProtos(modifiers []rule.RuleModifier) []*logv1.RuleModifierU
 		if modifier.ModifierID == "" {
 			continue
 		}
-		out = append(out, &logv1.RuleModifierUse{ModifierId: modifier.ModifierID, Revision: modifier.Revision})
+		out = append(out, &logv1.RuleModifierUse{ModifierId: proto.String(modifier.ModifierID), Revision: proto.String(modifier.Revision)})
 	}
 	return out
 }
@@ -113,11 +114,11 @@ func detectedRuleSummaryProtos(snapshot observations.StateSnapshot) []*logv1.Det
 	out := make([]*logv1.DetectedRuleSummary, 0, len(snapshot.Hits))
 	for _, hit := range snapshot.Hits {
 		out = append(out, &logv1.DetectedRuleSummary{
-			RulesetId:       hit.RulesetID,
-			RuleId:          hit.RuleID,
-			RulesetRevision: hit.RulesetRevision,
-			Action:          hit.Action,
-			Count:           uint64(hit.HitCount),
+			RulesetId:       proto.String(hit.RulesetID),
+			RuleId:          proto.String(hit.RuleID),
+			RulesetRevision: proto.String(hit.RulesetRevision),
+			Action:          proto.String(hit.Action),
+			Count:           proto.Uint32(uint32Counter(hit.HitCount)),
 		})
 	}
 	return out

@@ -2,6 +2,7 @@ package joblogs
 
 import (
 	"log/slog"
+	"math"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -28,11 +29,25 @@ func newLogID() string {
 	return id.String()
 }
 
-func uint64Counter(n int64) uint64 {
+func uint32Counter(n int64) uint32 {
 	if n < 0 {
 		return 0
 	}
-	return uint64(n)
+	if n > math.MaxUint32 {
+		return math.MaxUint32
+	}
+	return uint32(n)
+}
+
+// AbsentSentinel marks fields that are emitted even when no value exists,
+// so readers can tell "nothing was loaded" apart from a real value.
+const AbsentSentinel = "(none)"
+
+func configRevisionOrAbsent(s string) string {
+	if s == "" {
+		return AbsentSentinel
+	}
+	return s
 }
 
 func componentLogger(logger *slog.Logger, component string) *slog.Logger {

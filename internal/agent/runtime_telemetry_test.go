@@ -54,8 +54,8 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_EmitsEntryWithoutHits(t *testing.
 	if len(entries) != 1 {
 		t.Fatalf("entry count: got %d, want 1", len(entries))
 	}
-	if entries[0].Scope != string(jobcontext.ScopeKindHost) {
-		t.Fatalf("scope: got %q, want %q", entries[0].Scope, string(jobcontext.ScopeKindHost))
+	if entries[0].GetScope() != string(jobcontext.ScopeKindHost) {
+		t.Fatalf("scope: got %q, want %q", entries[0].GetScope(), string(jobcontext.ScopeKindHost))
 	}
 	if entries[0].Event.GetId() != event.ID {
 		t.Fatalf("event id: got %q, want %q", entries[0].Event.GetId(), event.ID)
@@ -77,8 +77,8 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_DoesNotEmbedHits(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatalf("entry count: got %d, want 1", len(entries))
 	}
-	if entries[0].Scope != string(jobcontext.ScopeKindProject) {
-		t.Fatalf("scope: got %q, want %q", entries[0].Scope, string(jobcontext.ScopeKindProject))
+	if entries[0].GetScope() != string(jobcontext.ScopeKindProject) {
+		t.Fatalf("scope: got %q, want %q", entries[0].GetScope(), string(jobcontext.ScopeKindProject))
 	}
 	if entries[0].Event.GetNetworkConnect().GetRemoteIp() != "example.com" {
 		t.Fatalf("event remote_ip: got %q, want example.com", entries[0].Event.GetNetworkConnect().GetRemoteIp())

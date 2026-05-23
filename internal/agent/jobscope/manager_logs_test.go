@@ -128,7 +128,7 @@ func TestJobScopeStateWriteDetectionLogForHit_CollectEmitsDetectionLog(t *testin
 	if len(entries) != 1 {
 		t.Fatalf("detection entries: got %d, want 1", len(entries))
 	}
-	if got, want := entries[0].Action, string(rule.RuleActionCollect); got != want {
+	if got, want := entries[0].GetAction(), string(rule.RuleActionCollect); got != want {
 		t.Fatalf("action: got %q, want %q", got, want)
 	}
 	if got := scope.CorrelationHitCountFor(hit.Identity); got != 1 {
@@ -173,22 +173,22 @@ func TestJobScopeStateWriteDetectionLogForHit_MaxAlertsCapsDetectionLog(t *testi
 	if len(entries) != 2 {
 		t.Fatalf("detection entries: got %d, want 2", len(entries))
 	}
-	if got, want := entries[0].RuleAlertTruncation, ""; got != want {
+	if got, want := entries[0].GetRuleAlertTruncation(), ""; got != want {
 		t.Fatalf("first truncation: got %q, want %q", got, want)
 	}
-	if got, want := entries[1].RuleAlertTruncation, resultdoc.AlertTruncationMaxAlertsReached; got != want {
+	if got, want := entries[1].GetRuleAlertTruncation(), resultdoc.AlertTruncationMaxAlertsReached; got != want {
 		t.Fatalf("second truncation: got %q, want %q", got, want)
 	}
-	if got, want := entries[0].RuleName, "Detect token"; got != want {
+	if got, want := entries[0].GetRuleName(), "Detect token"; got != want {
 		t.Fatalf("rule name: got %q, want %q", got, want)
 	}
 	if got, want := entries[0].Job.GetRunnerKind(), "machine"; got != want {
 		t.Fatalf("runner kind: got %q, want %q", got, want)
 	}
-	if got, want := entries[0].RuleDescription, "flags token-like process arguments"; got != want {
+	if got, want := entries[0].GetRuleDescription(), "flags token-like process arguments"; got != want {
 		t.Fatalf("rule description: got %q, want %q", got, want)
 	}
-	if got, want := entries[0].RulesetRevision, "rules-sha"; got != want {
+	if got, want := entries[0].GetRulesetRevision(), "rules-sha"; got != want {
 		t.Fatalf("ruleset revision: got %q, want %q", got, want)
 	}
 }
@@ -210,7 +210,7 @@ func TestJobScopeStateWriteRuntimeTelemetryLog_EmitsEvent(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatalf("runtime telemetry entries: got %d, want 1", len(entries))
 	}
-	if got, want := entries[0].Scope, string(jobcontext.ScopeKindProject); got != want {
+	if got, want := entries[0].GetScope(), string(jobcontext.ScopeKindProject); got != want {
 		t.Fatalf("scope: got %q, want %q", got, want)
 	}
 	if got, want := entries[0].Job.GetRunnerKind(), "machine"; got != want {
@@ -313,22 +313,22 @@ func TestJobScopeStateEmitJobResultLog_FlushesFinalRecord(t *testing.T) {
 		t.Fatalf("job result entries: got %d, want 1", len(entries))
 	}
 	entry := entries[0]
-	if got, want := entry.Scope, string(jobcontext.ScopeKindHost); got != want {
+	if got, want := entry.GetScope(), string(jobcontext.ScopeKindHost); got != want {
 		t.Fatalf("scope: got %q, want %q", got, want)
 	}
 	if got, want := entry.Job.GetRunnerKind(), "machine"; got != want {
 		t.Fatalf("runner kind: got %q, want %q", got, want)
 	}
-	if got, want := entry.ConfigRevision, "config-sha"; got != want {
+	if got, want := entry.GetConfigRevision(), "config-sha"; got != want {
 		t.Fatalf("config revision: got %q, want %q", got, want)
 	}
-	if got, want := entry.FinalizeReason, "completed"; got != want {
+	if got, want := entry.GetFinalizeReason(), "completed"; got != want {
 		t.Fatalf("finalize reason: got %q, want %q", got, want)
 	}
-	if len(entry.Rulesets) != 1 || entry.Rulesets[0].RulesetId != "set" || entry.Rulesets[0].Revision != "rules-sha" {
+	if len(entry.Rulesets) != 1 || entry.Rulesets[0].GetRulesetId() != "set" || entry.Rulesets[0].GetRevision() != "rules-sha" {
 		t.Fatalf("rulesets: got %#v, want set/rules-sha", entry.Rulesets)
 	}
-	if len(entry.Detections) != 1 || entry.Detections[0].RuleId != "detect_token" || entry.Detections[0].Count != 1 {
+	if len(entry.Detections) != 1 || entry.Detections[0].GetRuleId() != "detect_token" || entry.Detections[0].GetCount() != 1 {
 		t.Fatalf("detections: got %#v, want detect_token count=1", entry.Detections)
 	}
 	if len(entry.NetworkConnects) != 1 || entry.NetworkConnects[0] != "203.0.113.20" {

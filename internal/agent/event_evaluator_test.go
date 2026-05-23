@@ -290,8 +290,8 @@ func TestEvaluateEvent_EmitsDetectionLog(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatalf("detection entries: got %d, want 1", len(entries))
 	}
-	if entries[0].Scope != string(jobcontext.ScopeKindHost) {
-		t.Fatalf("scope: got %q, want %q", entries[0].Scope, string(jobcontext.ScopeKindHost))
+	if entries[0].GetScope() != string(jobcontext.ScopeKindHost) {
+		t.Fatalf("scope: got %q, want %q", entries[0].GetScope(), string(jobcontext.ScopeKindHost))
 	}
 	if detectionRuleRef(entries[0]) != "host-set/detect" {
 		t.Fatalf("rule_id: got %q, want %q", detectionRuleRef(entries[0]), "host-set/detect")
@@ -340,10 +340,10 @@ func TestEvaluateEvent_ScopeFieldHostProject(t *testing.T) {
 
 	hostEntries := hostStream.Entries(t)
 	projectEntries := projectStream.Entries(t)
-	if len(hostEntries) != 1 || hostEntries[0].Scope != string(jobcontext.ScopeKindHost) {
+	if len(hostEntries) != 1 || hostEntries[0].GetScope() != string(jobcontext.ScopeKindHost) {
 		t.Fatalf("host entries: got %#v", hostEntries)
 	}
-	if len(projectEntries) != 1 || projectEntries[0].Scope != string(jobcontext.ScopeKindProject) {
+	if len(projectEntries) != 1 || projectEntries[0].GetScope() != string(jobcontext.ScopeKindProject) {
 		t.Fatalf("project entries: got %#v", projectEntries)
 	}
 }
@@ -373,7 +373,7 @@ func TestEvaluateEvent_CollectHitEmitsDetectionLog(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatalf("detection entries: got %d, want 1", len(entries))
 	}
-	if got, want := entries[0].Action, string(rule.RuleActionCollect); got != want {
+	if got, want := entries[0].GetAction(), string(rule.RuleActionCollect); got != want {
 		t.Fatalf("action: got %q, want %q", got, want)
 	}
 }
@@ -405,8 +405,8 @@ func TestEvaluateEvent_EmitsRuntimeTelemetryForAllEvents(t *testing.T) {
 	if len(entries) != 1 {
 		t.Fatalf("runtime telemetry entries: got %d, want 1", len(entries))
 	}
-	if entries[0].Scope != string(jobcontext.ScopeKindHost) {
-		t.Fatalf("scope: got %q, want %q", entries[0].Scope, string(jobcontext.ScopeKindHost))
+	if entries[0].GetScope() != string(jobcontext.ScopeKindHost) {
+		t.Fatalf("scope: got %q, want %q", entries[0].GetScope(), string(jobcontext.ScopeKindHost))
 	}
 	if entries[0].GetEvent().GetId() == "" {
 		t.Fatal("event id missing")
@@ -482,10 +482,10 @@ func TestEvaluateEvent_TelemetryScopeFieldHostProject(t *testing.T) {
 
 	hostEntries := hostStream.Entries(t)
 	projectEntries := projectStream.Entries(t)
-	if len(hostEntries) != 1 || hostEntries[0].Scope != string(jobcontext.ScopeKindHost) {
+	if len(hostEntries) != 1 || hostEntries[0].GetScope() != string(jobcontext.ScopeKindHost) {
 		t.Fatalf("host entries: got %#v", hostEntries)
 	}
-	if len(projectEntries) != 1 || projectEntries[0].Scope != string(jobcontext.ScopeKindProject) {
+	if len(projectEntries) != 1 || projectEntries[0].GetScope() != string(jobcontext.ScopeKindProject) {
 		t.Fatalf("project entries: got %#v", projectEntries)
 	}
 }

@@ -26,18 +26,18 @@ type JobResultLogEntry struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// UUIDv7 for this result log row.
-	LogId           string                 `protobuf:"bytes,2,opt,name=log_id,proto3" json:"log_id,omitempty"`
+	LogId           *string                `protobuf:"bytes,2,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
 	Job             *JobLogContext         `protobuf:"bytes,3,opt,name=job,proto3" json:"job,omitempty"`
-	Scope           string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
-	ConfigRevision  string                 `protobuf:"bytes,5,opt,name=config_revision,proto3" json:"config_revision,omitempty"`
+	Scope           *string                `protobuf:"bytes,4,opt,name=scope,proto3,oneof" json:"scope,omitempty"`
+	ConfigRevision  *string                `protobuf:"bytes,5,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
 	Rulesets        []*RulesetUse          `protobuf:"bytes,6,rep,name=rulesets,proto3" json:"rulesets,omitempty"`
 	RuleModifiers   []*RuleModifierUse     `protobuf:"bytes,7,rep,name=rule_modifiers,proto3" json:"rule_modifiers,omitempty"`
 	NetworkConnects []string               `protobuf:"bytes,8,rep,name=network_connects,proto3" json:"network_connects,omitempty"`
 	Domains         []string               `protobuf:"bytes,9,rep,name=domains,proto3" json:"domains,omitempty"`
 	Detections      []*DetectedRuleSummary `protobuf:"bytes,10,rep,name=detections,proto3" json:"detections,omitempty"`
-	EventsTotal     uint64                 `protobuf:"varint,11,opt,name=events_total,proto3" json:"events_total,omitempty"`
-	EventsDropped   uint64                 `protobuf:"varint,12,opt,name=events_dropped,proto3" json:"events_dropped,omitempty"`
-	FinalizeReason  string                 `protobuf:"bytes,13,opt,name=finalize_reason,proto3" json:"finalize_reason,omitempty"`
+	EventsTotal     *uint32                `protobuf:"varint,11,opt,name=events_total,proto3,oneof" json:"events_total,omitempty"`
+	EventsDropped   *uint32                `protobuf:"varint,12,opt,name=events_dropped,proto3,oneof" json:"events_dropped,omitempty"`
+	FinalizeReason  *string                `protobuf:"bytes,13,opt,name=finalize_reason,proto3,oneof" json:"finalize_reason,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -80,8 +80,8 @@ func (x *JobResultLogEntry) GetTimestamp() *timestamppb.Timestamp {
 }
 
 func (x *JobResultLogEntry) GetLogId() string {
-	if x != nil {
-		return x.LogId
+	if x != nil && x.LogId != nil {
+		return *x.LogId
 	}
 	return ""
 }
@@ -94,15 +94,15 @@ func (x *JobResultLogEntry) GetJob() *JobLogContext {
 }
 
 func (x *JobResultLogEntry) GetScope() string {
-	if x != nil {
-		return x.Scope
+	if x != nil && x.Scope != nil {
+		return *x.Scope
 	}
 	return ""
 }
 
 func (x *JobResultLogEntry) GetConfigRevision() string {
-	if x != nil {
-		return x.ConfigRevision
+	if x != nil && x.ConfigRevision != nil {
+		return *x.ConfigRevision
 	}
 	return ""
 }
@@ -142,31 +142,31 @@ func (x *JobResultLogEntry) GetDetections() []*DetectedRuleSummary {
 	return nil
 }
 
-func (x *JobResultLogEntry) GetEventsTotal() uint64 {
-	if x != nil {
-		return x.EventsTotal
+func (x *JobResultLogEntry) GetEventsTotal() uint32 {
+	if x != nil && x.EventsTotal != nil {
+		return *x.EventsTotal
 	}
 	return 0
 }
 
-func (x *JobResultLogEntry) GetEventsDropped() uint64 {
-	if x != nil {
-		return x.EventsDropped
+func (x *JobResultLogEntry) GetEventsDropped() uint32 {
+	if x != nil && x.EventsDropped != nil {
+		return *x.EventsDropped
 	}
 	return 0
 }
 
 func (x *JobResultLogEntry) GetFinalizeReason() string {
-	if x != nil {
-		return x.FinalizeReason
+	if x != nil && x.FinalizeReason != nil {
+		return *x.FinalizeReason
 	}
 	return ""
 }
 
 type RulesetUse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	RulesetId     string                 `protobuf:"bytes,1,opt,name=ruleset_id,proto3" json:"ruleset_id,omitempty"`
-	Revision      string                 `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	RulesetId     *string                `protobuf:"bytes,1,opt,name=ruleset_id,proto3,oneof" json:"ruleset_id,omitempty"`
+	Revision      *string                `protobuf:"bytes,2,opt,name=revision,proto3,oneof" json:"revision,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -202,23 +202,23 @@ func (*RulesetUse) Descriptor() ([]byte, []int) {
 }
 
 func (x *RulesetUse) GetRulesetId() string {
-	if x != nil {
-		return x.RulesetId
+	if x != nil && x.RulesetId != nil {
+		return *x.RulesetId
 	}
 	return ""
 }
 
 func (x *RulesetUse) GetRevision() string {
-	if x != nil {
-		return x.Revision
+	if x != nil && x.Revision != nil {
+		return *x.Revision
 	}
 	return ""
 }
 
 type RuleModifierUse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ModifierId    string                 `protobuf:"bytes,1,opt,name=modifier_id,proto3" json:"modifier_id,omitempty"`
-	Revision      string                 `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	ModifierId    *string                `protobuf:"bytes,1,opt,name=modifier_id,proto3,oneof" json:"modifier_id,omitempty"`
+	Revision      *string                `protobuf:"bytes,2,opt,name=revision,proto3,oneof" json:"revision,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -254,26 +254,26 @@ func (*RuleModifierUse) Descriptor() ([]byte, []int) {
 }
 
 func (x *RuleModifierUse) GetModifierId() string {
-	if x != nil {
-		return x.ModifierId
+	if x != nil && x.ModifierId != nil {
+		return *x.ModifierId
 	}
 	return ""
 }
 
 func (x *RuleModifierUse) GetRevision() string {
-	if x != nil {
-		return x.Revision
+	if x != nil && x.Revision != nil {
+		return *x.Revision
 	}
 	return ""
 }
 
 type DetectedRuleSummary struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	RulesetId       string                 `protobuf:"bytes,1,opt,name=ruleset_id,proto3" json:"ruleset_id,omitempty"`
-	RuleId          string                 `protobuf:"bytes,2,opt,name=rule_id,proto3" json:"rule_id,omitempty"`
-	RulesetRevision string                 `protobuf:"bytes,3,opt,name=ruleset_revision,proto3" json:"ruleset_revision,omitempty"`
-	Action          string                 `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"`
-	Count           uint64                 `protobuf:"varint,5,opt,name=count,proto3" json:"count,omitempty"`
+	RulesetId       *string                `protobuf:"bytes,1,opt,name=ruleset_id,proto3,oneof" json:"ruleset_id,omitempty"`
+	RuleId          *string                `protobuf:"bytes,2,opt,name=rule_id,proto3,oneof" json:"rule_id,omitempty"`
+	RulesetRevision *string                `protobuf:"bytes,3,opt,name=ruleset_revision,proto3,oneof" json:"ruleset_revision,omitempty"`
+	Action          *string                `protobuf:"bytes,4,opt,name=action,proto3,oneof" json:"action,omitempty"`
+	Count           *uint32                `protobuf:"varint,5,opt,name=count,proto3,oneof" json:"count,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -309,36 +309,36 @@ func (*DetectedRuleSummary) Descriptor() ([]byte, []int) {
 }
 
 func (x *DetectedRuleSummary) GetRulesetId() string {
-	if x != nil {
-		return x.RulesetId
+	if x != nil && x.RulesetId != nil {
+		return *x.RulesetId
 	}
 	return ""
 }
 
 func (x *DetectedRuleSummary) GetRuleId() string {
-	if x != nil {
-		return x.RuleId
+	if x != nil && x.RuleId != nil {
+		return *x.RuleId
 	}
 	return ""
 }
 
 func (x *DetectedRuleSummary) GetRulesetRevision() string {
-	if x != nil {
-		return x.RulesetRevision
+	if x != nil && x.RulesetRevision != nil {
+		return *x.RulesetRevision
 	}
 	return ""
 }
 
 func (x *DetectedRuleSummary) GetAction() string {
-	if x != nil {
-		return x.Action
+	if x != nil && x.Action != nil {
+		return *x.Action
 	}
 	return ""
 }
 
-func (x *DetectedRuleSummary) GetCount() uint64 {
-	if x != nil {
-		return x.Count
+func (x *DetectedRuleSummary) GetCount() uint32 {
+	if x != nil && x.Count != nil {
+		return *x.Count
 	}
 	return 0
 }
@@ -347,13 +347,13 @@ var File_cicd_sensor_log_v1_result_proto protoreflect.FileDescriptor
 
 const file_cicd_sensor_log_v1_result_proto_rawDesc = "" +
 	"\n" +
-	"\x1fcicd_sensor/log/v1/result.proto\x12\x12cicd_sensor.log.v1\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe8\x04\n" +
+	"\x1fcicd_sensor/log/v1/result.proto\x12\x12cicd_sensor.log.v1\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe7\x05\n" +
 	"\x11JobResultLogEntry\x128\n" +
-	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x16\n" +
-	"\x06log_id\x18\x02 \x01(\tR\x06log_id\x123\n" +
-	"\x03job\x18\x03 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x14\n" +
-	"\x05scope\x18\x04 \x01(\tR\x05scope\x12(\n" +
-	"\x0fconfig_revision\x18\x05 \x01(\tR\x0fconfig_revision\x12:\n" +
+	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1b\n" +
+	"\x06log_id\x18\x02 \x01(\tH\x00R\x06log_id\x88\x01\x01\x123\n" +
+	"\x03job\x18\x03 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x19\n" +
+	"\x05scope\x18\x04 \x01(\tH\x01R\x05scope\x88\x01\x01\x12-\n" +
+	"\x0fconfig_revision\x18\x05 \x01(\tH\x02R\x0fconfig_revision\x88\x01\x01\x12:\n" +
 	"\brulesets\x18\x06 \x03(\v2\x1e.cicd_sensor.log.v1.RulesetUseR\brulesets\x12K\n" +
 	"\x0erule_modifiers\x18\a \x03(\v2#.cicd_sensor.log.v1.RuleModifierUseR\x0erule_modifiers\x12*\n" +
 	"\x10network_connects\x18\b \x03(\tR\x10network_connects\x12\x18\n" +
@@ -361,27 +361,43 @@ const file_cicd_sensor_log_v1_result_proto_rawDesc = "" +
 	"\n" +
 	"detections\x18\n" +
 	" \x03(\v2'.cicd_sensor.log.v1.DetectedRuleSummaryR\n" +
-	"detections\x12\"\n" +
-	"\fevents_total\x18\v \x01(\x04R\fevents_total\x12&\n" +
-	"\x0eevents_dropped\x18\f \x01(\x04R\x0eevents_dropped\x12(\n" +
-	"\x0ffinalize_reason\x18\r \x01(\tR\x0ffinalize_reason\"H\n" +
+	"detections\x12'\n" +
+	"\fevents_total\x18\v \x01(\rH\x03R\fevents_total\x88\x01\x01\x12+\n" +
+	"\x0eevents_dropped\x18\f \x01(\rH\x04R\x0eevents_dropped\x88\x01\x01\x12-\n" +
+	"\x0ffinalize_reason\x18\r \x01(\tH\x05R\x0ffinalize_reason\x88\x01\x01B\t\n" +
+	"\a_log_idB\b\n" +
+	"\x06_scopeB\x12\n" +
+	"\x10_config_revisionB\x0f\n" +
+	"\r_events_totalB\x11\n" +
+	"\x0f_events_droppedB\x12\n" +
+	"\x10_finalize_reason\"n\n" +
 	"\n" +
-	"RulesetUse\x12\x1e\n" +
+	"RulesetUse\x12#\n" +
 	"\n" +
-	"ruleset_id\x18\x01 \x01(\tR\n" +
-	"ruleset_id\x12\x1a\n" +
-	"\brevision\x18\x02 \x01(\tR\brevision\"O\n" +
-	"\x0fRuleModifierUse\x12 \n" +
-	"\vmodifier_id\x18\x01 \x01(\tR\vmodifier_id\x12\x1a\n" +
-	"\brevision\x18\x02 \x01(\tR\brevision\"\xa9\x01\n" +
-	"\x13DetectedRuleSummary\x12\x1e\n" +
+	"ruleset_id\x18\x01 \x01(\tH\x00R\n" +
+	"ruleset_id\x88\x01\x01\x12\x1f\n" +
+	"\brevision\x18\x02 \x01(\tH\x01R\brevision\x88\x01\x01B\r\n" +
+	"\v_ruleset_idB\v\n" +
+	"\t_revision\"v\n" +
+	"\x0fRuleModifierUse\x12%\n" +
+	"\vmodifier_id\x18\x01 \x01(\tH\x00R\vmodifier_id\x88\x01\x01\x12\x1f\n" +
+	"\brevision\x18\x02 \x01(\tH\x01R\brevision\x88\x01\x01B\x0e\n" +
+	"\f_modifier_idB\v\n" +
+	"\t_revision\"\x87\x02\n" +
+	"\x13DetectedRuleSummary\x12#\n" +
 	"\n" +
-	"ruleset_id\x18\x01 \x01(\tR\n" +
-	"ruleset_id\x12\x18\n" +
-	"\arule_id\x18\x02 \x01(\tR\arule_id\x12*\n" +
-	"\x10ruleset_revision\x18\x03 \x01(\tR\x10ruleset_revision\x12\x16\n" +
-	"\x06action\x18\x04 \x01(\tR\x06action\x12\x14\n" +
-	"\x05count\x18\x05 \x01(\x04R\x05countB\xd7\x01\n" +
+	"ruleset_id\x18\x01 \x01(\tH\x00R\n" +
+	"ruleset_id\x88\x01\x01\x12\x1d\n" +
+	"\arule_id\x18\x02 \x01(\tH\x01R\arule_id\x88\x01\x01\x12/\n" +
+	"\x10ruleset_revision\x18\x03 \x01(\tH\x02R\x10ruleset_revision\x88\x01\x01\x12\x1b\n" +
+	"\x06action\x18\x04 \x01(\tH\x03R\x06action\x88\x01\x01\x12\x19\n" +
+	"\x05count\x18\x05 \x01(\rH\x04R\x05count\x88\x01\x01B\r\n" +
+	"\v_ruleset_idB\n" +
+	"\n" +
+	"\b_rule_idB\x13\n" +
+	"\x11_ruleset_revisionB\t\n" +
+	"\a_actionB\b\n" +
+	"\x06_countB\xd7\x01\n" +
 	"\x16com.cicd_sensor.log.v1B\vResultProtoP\x01ZJgithub.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/log/v1;logv1\xa2\x02\x03CLX\xaa\x02\x11CicdSensor.Log.V1\xca\x02\x11CicdSensor\\Log\\V1\xe2\x02\x1dCicdSensor\\Log\\V1\\GPBMetadata\xea\x02\x13CicdSensor::Log::V1b\x06proto3"
 
 var (
@@ -424,6 +440,10 @@ func file_cicd_sensor_log_v1_result_proto_init() {
 		return
 	}
 	file_cicd_sensor_log_v1_common_proto_init()
+	file_cicd_sensor_log_v1_result_proto_msgTypes[0].OneofWrappers = []any{}
+	file_cicd_sensor_log_v1_result_proto_msgTypes[1].OneofWrappers = []any{}
+	file_cicd_sensor_log_v1_result_proto_msgTypes[2].OneofWrappers = []any{}
+	file_cicd_sensor_log_v1_result_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

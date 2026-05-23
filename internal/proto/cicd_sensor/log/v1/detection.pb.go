@@ -26,17 +26,17 @@ type JobDetectionLogEntry struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	Timestamp *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 	// UUIDv7 for this detection log row.
-	LogId               string         `protobuf:"bytes,2,opt,name=log_id,proto3" json:"log_id,omitempty"`
+	LogId               *string        `protobuf:"bytes,2,opt,name=log_id,proto3,oneof" json:"log_id,omitempty"`
 	Job                 *JobLogContext `protobuf:"bytes,3,opt,name=job,proto3" json:"job,omitempty"`
-	Scope               string         `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
-	ConfigRevision      string         `protobuf:"bytes,5,opt,name=config_revision,proto3" json:"config_revision,omitempty"`
-	RulesetId           string         `protobuf:"bytes,7,opt,name=ruleset_id,proto3" json:"ruleset_id,omitempty"`
-	RuleId              string         `protobuf:"bytes,8,opt,name=rule_id,proto3" json:"rule_id,omitempty"`
-	RulesetRevision     string         `protobuf:"bytes,9,opt,name=ruleset_revision,proto3" json:"ruleset_revision,omitempty"`
-	RuleName            string         `protobuf:"bytes,10,opt,name=rule_name,proto3" json:"rule_name,omitempty"`
-	RuleDescription     string         `protobuf:"bytes,11,opt,name=rule_description,proto3" json:"rule_description,omitempty"`
-	Action              string         `protobuf:"bytes,12,opt,name=action,proto3" json:"action,omitempty"`
-	RuleAlertTruncation string         `protobuf:"bytes,13,opt,name=rule_alert_truncation,proto3" json:"rule_alert_truncation,omitempty"`
+	Scope               *string        `protobuf:"bytes,4,opt,name=scope,proto3,oneof" json:"scope,omitempty"`
+	ConfigRevision      *string        `protobuf:"bytes,5,opt,name=config_revision,proto3,oneof" json:"config_revision,omitempty"`
+	RulesetId           *string        `protobuf:"bytes,7,opt,name=ruleset_id,proto3,oneof" json:"ruleset_id,omitempty"`
+	RuleId              *string        `protobuf:"bytes,8,opt,name=rule_id,proto3,oneof" json:"rule_id,omitempty"`
+	RulesetRevision     *string        `protobuf:"bytes,9,opt,name=ruleset_revision,proto3,oneof" json:"ruleset_revision,omitempty"`
+	RuleName            *string        `protobuf:"bytes,10,opt,name=rule_name,proto3,oneof" json:"rule_name,omitempty"`
+	RuleDescription     *string        `protobuf:"bytes,11,opt,name=rule_description,proto3,oneof" json:"rule_description,omitempty"`
+	Action              *string        `protobuf:"bytes,12,opt,name=action,proto3,oneof" json:"action,omitempty"`
+	RuleAlertTruncation *string        `protobuf:"bytes,13,opt,name=rule_alert_truncation,proto3,oneof" json:"rule_alert_truncation,omitempty"`
 	Event               *EventRecord   `protobuf:"bytes,14,opt,name=event,proto3" json:"event,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
@@ -80,8 +80,8 @@ func (x *JobDetectionLogEntry) GetTimestamp() *timestamppb.Timestamp {
 }
 
 func (x *JobDetectionLogEntry) GetLogId() string {
-	if x != nil {
-		return x.LogId
+	if x != nil && x.LogId != nil {
+		return *x.LogId
 	}
 	return ""
 }
@@ -94,64 +94,64 @@ func (x *JobDetectionLogEntry) GetJob() *JobLogContext {
 }
 
 func (x *JobDetectionLogEntry) GetScope() string {
-	if x != nil {
-		return x.Scope
+	if x != nil && x.Scope != nil {
+		return *x.Scope
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetConfigRevision() string {
-	if x != nil {
-		return x.ConfigRevision
+	if x != nil && x.ConfigRevision != nil {
+		return *x.ConfigRevision
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetRulesetId() string {
-	if x != nil {
-		return x.RulesetId
+	if x != nil && x.RulesetId != nil {
+		return *x.RulesetId
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetRuleId() string {
-	if x != nil {
-		return x.RuleId
+	if x != nil && x.RuleId != nil {
+		return *x.RuleId
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetRulesetRevision() string {
-	if x != nil {
-		return x.RulesetRevision
+	if x != nil && x.RulesetRevision != nil {
+		return *x.RulesetRevision
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetRuleName() string {
-	if x != nil {
-		return x.RuleName
+	if x != nil && x.RuleName != nil {
+		return *x.RuleName
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetRuleDescription() string {
-	if x != nil {
-		return x.RuleDescription
+	if x != nil && x.RuleDescription != nil {
+		return *x.RuleDescription
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetAction() string {
-	if x != nil {
-		return x.Action
+	if x != nil && x.Action != nil {
+		return *x.Action
 	}
 	return ""
 }
 
 func (x *JobDetectionLogEntry) GetRuleAlertTruncation() string {
-	if x != nil {
-		return x.RuleAlertTruncation
+	if x != nil && x.RuleAlertTruncation != nil {
+		return *x.RuleAlertTruncation
 	}
 	return ""
 }
@@ -167,24 +167,36 @@ var File_cicd_sensor_log_v1_detection_proto protoreflect.FileDescriptor
 
 const file_cicd_sensor_log_v1_detection_proto_rawDesc = "" +
 	"\n" +
-	"\"cicd_sensor/log/v1/detection.proto\x12\x12cicd_sensor.log.v1\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x92\x04\n" +
+	"\"cicd_sensor/log/v1/detection.proto\x12\x12cicd_sensor.log.v1\x1a\x1fcicd_sensor/log/v1/common.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe5\x05\n" +
 	"\x14JobDetectionLogEntry\x128\n" +
-	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x16\n" +
-	"\x06log_id\x18\x02 \x01(\tR\x06log_id\x123\n" +
-	"\x03job\x18\x03 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x14\n" +
-	"\x05scope\x18\x04 \x01(\tR\x05scope\x12(\n" +
-	"\x0fconfig_revision\x18\x05 \x01(\tR\x0fconfig_revision\x12\x1e\n" +
+	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1b\n" +
+	"\x06log_id\x18\x02 \x01(\tH\x00R\x06log_id\x88\x01\x01\x123\n" +
+	"\x03job\x18\x03 \x01(\v2!.cicd_sensor.log.v1.JobLogContextR\x03job\x12\x19\n" +
+	"\x05scope\x18\x04 \x01(\tH\x01R\x05scope\x88\x01\x01\x12-\n" +
+	"\x0fconfig_revision\x18\x05 \x01(\tH\x02R\x0fconfig_revision\x88\x01\x01\x12#\n" +
 	"\n" +
-	"ruleset_id\x18\a \x01(\tR\n" +
-	"ruleset_id\x12\x18\n" +
-	"\arule_id\x18\b \x01(\tR\arule_id\x12*\n" +
-	"\x10ruleset_revision\x18\t \x01(\tR\x10ruleset_revision\x12\x1c\n" +
+	"ruleset_id\x18\a \x01(\tH\x03R\n" +
+	"ruleset_id\x88\x01\x01\x12\x1d\n" +
+	"\arule_id\x18\b \x01(\tH\x04R\arule_id\x88\x01\x01\x12/\n" +
+	"\x10ruleset_revision\x18\t \x01(\tH\x05R\x10ruleset_revision\x88\x01\x01\x12!\n" +
 	"\trule_name\x18\n" +
-	" \x01(\tR\trule_name\x12*\n" +
-	"\x10rule_description\x18\v \x01(\tR\x10rule_description\x12\x16\n" +
-	"\x06action\x18\f \x01(\tR\x06action\x124\n" +
-	"\x15rule_alert_truncation\x18\r \x01(\tR\x15rule_alert_truncation\x125\n" +
-	"\x05event\x18\x0e \x01(\v2\x1f.cicd_sensor.log.v1.EventRecordR\x05eventB\xda\x01\n" +
+	" \x01(\tH\x06R\trule_name\x88\x01\x01\x12/\n" +
+	"\x10rule_description\x18\v \x01(\tH\aR\x10rule_description\x88\x01\x01\x12\x1b\n" +
+	"\x06action\x18\f \x01(\tH\bR\x06action\x88\x01\x01\x129\n" +
+	"\x15rule_alert_truncation\x18\r \x01(\tH\tR\x15rule_alert_truncation\x88\x01\x01\x125\n" +
+	"\x05event\x18\x0e \x01(\v2\x1f.cicd_sensor.log.v1.EventRecordR\x05eventB\t\n" +
+	"\a_log_idB\b\n" +
+	"\x06_scopeB\x12\n" +
+	"\x10_config_revisionB\r\n" +
+	"\v_ruleset_idB\n" +
+	"\n" +
+	"\b_rule_idB\x13\n" +
+	"\x11_ruleset_revisionB\f\n" +
+	"\n" +
+	"_rule_nameB\x13\n" +
+	"\x11_rule_descriptionB\t\n" +
+	"\a_actionB\x18\n" +
+	"\x16_rule_alert_truncationB\xda\x01\n" +
 	"\x16com.cicd_sensor.log.v1B\x0eDetectionProtoP\x01ZJgithub.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/log/v1;logv1\xa2\x02\x03CLX\xaa\x02\x11CicdSensor.Log.V1\xca\x02\x11CicdSensor\\Log\\V1\xe2\x02\x1dCicdSensor\\Log\\V1\\GPBMetadata\xea\x02\x13CicdSensor::Log::V1b\x06proto3"
 
 var (
@@ -223,6 +235,7 @@ func file_cicd_sensor_log_v1_detection_proto_init() {
 		return
 	}
 	file_cicd_sensor_log_v1_common_proto_init()
+	file_cicd_sensor_log_v1_detection_proto_msgTypes[0].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

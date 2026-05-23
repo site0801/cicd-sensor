@@ -1,6 +1,7 @@
 package joblogs
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -138,6 +139,36 @@ func TestMarshalJobResultLogEntryBuildsFinalSummary(t *testing.T) {
 	}
 	if got.GetFinalizeReason() != "job_finished" {
 		t.Fatalf("finalize reason: got %q", got.GetFinalizeReason())
+	}
+}
+
+func TestMarshalJobResultLogEntryEmitsExplicitZeroCounters(t *testing.T) {
+	t.Parallel()
+
+	payload, err := MarshalJobResultLogEntry(JobResultLogInput{ScopeLogContext: testScopeLogContext()})
+	if err != nil {
+		t.Fatalf("marshal job result log: %v", err)
+	}
+	raw := string(payload)
+	if !strings.Contains(raw, `"events_total":0`) {
+		t.Fatalf("events_total: want explicit 0 in JSON, got %s", raw)
+	}
+	if !strings.Contains(raw, `"events_dropped":0`) {
+		t.Fatalf("events_dropped: want explicit 0 in JSON, got %s", raw)
+	}
+}
+
+func TestMarshalJobResultLogEntryConfigRevisionAbsentSentinel(t *testing.T) {
+	t.Parallel()
+
+	scope := testScopeLogContext()
+	scope.ConfigRevision = ""
+	payload, err := MarshalJobResultLogEntry(JobResultLogInput{ScopeLogContext: scope})
+	if err != nil {
+		t.Fatalf("marshal job result log: %v", err)
+	}
+	if !strings.Contains(string(payload), `"config_revision":"(none)"`) {
+		t.Fatalf("config_revision: want explicit %q sentinel in JSON, got %s", AbsentSentinel, payload)
 	}
 }
 

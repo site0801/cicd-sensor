@@ -2,6 +2,7 @@ package joblogs
 
 import (
 	"log/slog"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -80,22 +81,23 @@ func TestNewLogIDReturnsUUID(t *testing.T) {
 	}
 }
 
-func TestUint64CounterClampsNegativeValues(t *testing.T) {
+func TestUint32CounterClampsNegativeAndOverflow(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name string
 		in   int64
-		want uint64
+		want uint32
 	}{
 		{name: "negative", in: -1, want: 0},
 		{name: "zero", in: 0, want: 0},
 		{name: "positive", in: 42, want: 42},
+		{name: "overflow", in: 1 << 33, want: math.MaxUint32},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := uint64Counter(tt.in); got != tt.want {
-				t.Fatalf("uint64Counter(%d): got %d, want %d", tt.in, got, tt.want)
+			if got := uint32Counter(tt.in); got != tt.want {
+				t.Fatalf("uint32Counter(%d): got %d, want %d", tt.in, got, tt.want)
 			}
 		})
 	}
