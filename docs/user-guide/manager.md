@@ -23,15 +23,11 @@ flowchart LR
 
 ## When to use it
 
-Use the manager for operations such as:
+The Manager is the only path that ships logs off the runner and the single point of central, real-time fleet management.
 
-- Running a Self-hosted Machine Runner fleet.
-- Distributing organization-wide standard rules or custom rules.
-- Aggregating Detection Logs and Runtime Event Logs into a SIEM or data lake.
-- Keeping per-job evidence centrally for incident response.
-- Avoiding cloud credentials on runner hosts.
-
-For a first test in a single project, start with standalone GitHub-hosted runner usage.
+- **Required** for any self-hosted runner deployment (Self-hosted Machine Runner, GitLab Runner). Config, rules, and log delivery all go through the Manager.
+- **Required** to ship Summary, Detection, or Runtime Event Logs anywhere — including from GitHub-hosted runners — and to distribute organization-wide rules from a central source.
+- **Optional** only in GitHub-hosted runner standalone mode, which produces report and attestation artifacts in the job itself with repository-local config.
 
 ## Deployment model
 
@@ -43,9 +39,9 @@ This keeps it stateless, easy to scale, and close to the cloud-side outputs it w
 
 | Target | Notes |
 | --- | --- |
-| AWS Lambda | Uses a Lambda adapter image. A Lambda image that includes `public.ecr.aws/awsguru/aws-lambda-adapter` is provided. AWS only pulls from its own container registry (ECR), so mirror the `ghcr.io` image to ECR or push the image there directly. |
+| AWS Lambda | Use the provided Lambda container image. AWS only pulls from its own container registry (ECR), so mirror the `ghcr.io` image to ECR or push the image there directly. |
 | ECS / Fargate | Uses the standard manager container image. AWS only pulls from its own container registry (ECR), so mirror the `ghcr.io` image to ECR or push the image there directly. Pass config / rules / tokens through file mounts, secrets, or environment variables. |
-| Kubernetes | Run it as a Deployment with Service / Ingress. Pass config / rules through ConfigMap, Secret, or mounted volume. |
+| Kubernetes | Uses the standard manager container image. Run it as a Deployment with Service / Ingress. Pass config / rules through ConfigMap, Secret, or mounted volume. |
 | Cloud Run | Uses the standard manager container image. Use service accounts / Workload Identity for GCS and Pub/Sub integration. Cloud Run only pulls from Google's container registry (Artifact Registry), so mirror the `ghcr.io` image to Artifact Registry or push the image there directly. |
 
 Public container images are distributed through GitHub Packages.
