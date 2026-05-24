@@ -66,7 +66,7 @@ This object describes the runtime behavior that triggered a rule hit or was emit
 
 | Field | Description |
 | --- | --- |
-| `id` | Runtime event UUID(v7). Use it to join runtime events and detections. |
+| `id` | Runtime event UUID(v7). Unique per captured event |
 | `type` | `process_exec`, `network_connect`, `file_open`, `domain`, and other event types |
 | `tags` | Tags attached to the event |
 | `process` | PID, executable path, argv, and ancestor processes |
@@ -89,7 +89,7 @@ This means a rule can match full argv content even when the corresponding log en
 | What happened across the job? | `summary` |
 | Which rules hit? | `detection` |
 | Which process / network / file events happened around a detection? | `runtime_event` |
-| How do I investigate the source event behind a SIEM alert? | Join `detection.event.id` with `runtime_event.event.id` |
+| How do I follow a detection through the rest of the job? | Join the detection's `job` fields to `runtime_event` and read by `timestamp` to trace the job's full activity. |
 
 When building a compatible log consumer, use the linked proto schema as the exact field reference.
 
