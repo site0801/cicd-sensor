@@ -206,6 +206,10 @@ func evaluateCorrelations(
 	}
 }
 
+// terminateProcess SIGKILLs the offending target so it can't run any
+// cleanup, then SIGINTs its process group so the CI runner (GitHub /
+// GitLab) treats it as a normal job-end and runs its own teardown.
+// Getpgid is queried before SIGKILL since the dead pid has no pgid.
 func terminateProcess(ctx context.Context, event jobevent.EventRecord, logger *slog.Logger) {
 	pid := event.Process.PID
 	if pid <= 0 {
@@ -216,11 +220,20 @@ func terminateProcess(ctx context.Context, event jobevent.EventRecord, logger *s
 		logger.WarnContext(ctx, "terminate_process_skipped", "reason", "self_pid", "pid", pid)
 		return
 	}
+
+	pgid, _ := syscall.Getpgid(int(pid))
+
 	if err := syscall.Kill(int(pid), syscall.SIGKILL); err != nil {
 		logger.WarnContext(ctx, "terminate_process_failed", "pid", pid, "error", err)
 		return
 	}
 	logger.WarnContext(ctx, "terminate_process_sent", "pid", pid)
+
+	if err := syscall.Kill(-pgid, syscall.SIGINT); err != nil {
+		logger.WarnContext(ctx, "terminate_process_group_sigint_failed", "pid", pid, "pgid", pgid, "error", err)
+	} else {
+		logger.WarnContext(ctx, "terminate_process_group_sigint_sent", "pid", pid, "pgid", pgid)
+	}
 }
 
 func newEventID() string {
