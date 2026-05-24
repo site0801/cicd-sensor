@@ -14,7 +14,7 @@ Unlike GitHub Actions, GitLab CI/CD does not require workflow steps or project-s
 | Self-hosted Shell Executor | Not planned |
 | GitLab-hosted runner | Not supported due to technical constraints |
 
-GitLab-hosted runners are not supported today because cicd-sensor cannot install the Agent or Docker proxy on the runner host.
+GitLab-hosted runners are not supported today because cicd-sensor cannot install the Agent on the runner host.
 
 ## Deployment model
 

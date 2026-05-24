@@ -71,4 +71,4 @@ In self-hosted deployments, config and rules come from the manager, not from the
 | GitLab CI/CD | Self-hosted Shell Executor | Not planned |
 | GitLab CI/CD | GitLab-hosted runner | Not supported due to technical constraints |
 
-GitLab-hosted runners are not supported today because cicd-sensor cannot install the Agent or Docker proxy on the runner host.
+GitLab-hosted runners are not supported today because cicd-sensor cannot install the Agent on the runner host.
