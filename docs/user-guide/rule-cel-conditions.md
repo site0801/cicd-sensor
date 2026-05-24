@@ -106,6 +106,7 @@ Expressions such as `process.argv[0]` are rejected by the validator.
 ## Process ancestors
 
 `process.ancestors` is the ancestor snapshot list attached to the event process context.
+It is ordered from the current process outward: parent, grandparent, and so on.
 Use `exists` to search across the ancestors visible within the job, not only the immediate parent.
 
 Example: process started through a shell.
@@ -140,24 +141,58 @@ condition: |
 
 Each ancestor also exposes `descendants`.
 It contains only the processes forked below that ancestor on the path to the current process.
+The list is ordered from that ancestor toward the current process: parent -> child.
 The current process itself is not included.
 
 `descendants` is useful in many process-chain rules.
 For example, a suspicious npm post-install script starts a shell, and that shell starts the process that triggers the event:
 
-```text
-Runner -> npm -> sh -> cat
+```mermaid
+flowchart LR
+    RUNNER["Runner"]
+    NPM["npm"]
+    SH["sh"]
+    CAT["cat<br/>current process"]
+
+    RUNNER --> NPM --> SH --> CAT
 ```
 
-When the current process is `cat`, the ancestors and descendants look like this:
+When the current process is `cat`, the ancestors and descendants look like this.
+The process tree runs left to right, while `process.ancestors` is listed from the current process outward:
 
 ```text
 process.ancestors = [sh, npm, Runner]
 
 sh.descendants     = []
 npm.descendants    = [sh]
-Runner.descendants = [sh, npm]
+Runner.descendants = [npm, sh]
 ```
+
+If the same executable appears more than once in the chain, `descendants` depends on which ancestor matched.
+It is not grouped by executable name; it is only the path from the selected ancestor toward the current process.
+
+```mermaid
+flowchart LR
+    OUTER_NODE["node<br/>outer ancestor"]
+    BASH["bash"]
+    INNER_NODE["node<br/>inner ancestor"]
+    CAT["cat<br/>current process"]
+
+    OUTER_NODE --> BASH --> INNER_NODE --> CAT
+```
+
+For that event, the repeated `node` processes are separate ancestor nodes:
+
+```text
+process.ancestors = [node, bash, node]
+
+inner node.descendants = []
+bash.descendants       = [node]
+outer node.descendants = [bash, node]
+```
+
+For detections, avoid anchoring only on a basename such as `node`.
+Combine `exec_path` with `argv` or package-manager lifecycle context so the rule matches the intended ancestor.
 
 Example: detect an event that happened under a shell launched by an npm post-install script.
 The event process can be `cat`, `curl`, `node`, or another child of that shell; the rule only requires that a shell exists below the npm ancestor.

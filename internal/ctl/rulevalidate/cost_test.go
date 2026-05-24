@@ -89,6 +89,19 @@ func TestRuleSetCostsWarningPolicy(t *testing.T) {
 			wantWarnings: map[string]bool{"condition": false},
 		},
 		{
+			name: "nested_ancestor_descendants_scan_is_acceptable",
+			set: rule.RuleSet{
+				RulesetID: "set-1",
+				Rules: []rule.Rule{{
+					RuleID:    "nested_ancestor_descendants",
+					EventType: jobevent.ProcessExec,
+					Condition: `process.ancestors.exists(a, a.descendants.exists(d, d.descendants.exists(g, g.exec_path.endsWith("/sh"))))`,
+					Action:    rule.RuleActionDetect,
+				}},
+			},
+			wantWarnings: map[string]bool{"condition": false},
+		},
+		{
 			// list.X.exists(p, T.contains(p)) is specialized to a Go-side
 			// any-match call at parse time, so cel-go scores the rule as
 			// cheap even when wrapped in an outer scan.

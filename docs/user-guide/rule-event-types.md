@@ -28,6 +28,7 @@ The first element is the immediate parent, followed by the grandparent.
 Rule conditions should search ancestors with `exists` instead of index access.
 Each ancestor exposes `exec_path`, `argv`, and `descendants`.
 `descendants` contains only the processes forked below that ancestor on the path to the current process.
+It is ordered from that ancestor toward the current process: parent -> child.
 It does not include the current process itself.
 
 ```yaml

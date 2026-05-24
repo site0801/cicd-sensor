@@ -419,14 +419,14 @@ func TestNewCELProcessDescendantViews(t *testing.T) {
 			wantPaths: [][]string{{}, {"/usr/bin/python"}},
 		},
 		{
-			name:    "three_level_prefix_views",
+			name:    "three_level_parent_to_child_order",
 			current: "/usr/bin/cat",
 			ancestors: []CELAncestor{
 				{ExecPath: "/bin/sh"},
 				{ExecPath: "/usr/bin/python"},
 				{ExecPath: "/bin/bash"},
 			},
-			wantPaths: [][]string{{}, {"/bin/sh"}, {"/bin/sh", "/usr/bin/python"}},
+			wantPaths: [][]string{{}, {"/bin/sh"}, {"/usr/bin/python", "/bin/sh"}},
 		},
 		{
 			name:    "preexisting_descendants_are_rederived",
@@ -436,6 +436,16 @@ func TestNewCELProcessDescendantViews(t *testing.T) {
 				{ExecPath: "/usr/bin/python", Descendants: []CELAncestor{{ExecPath: "/stale"}}},
 			},
 			wantPaths: [][]string{{}, {"/bin/sh"}},
+		},
+		{
+			name:    "repeated_executable_names_are_distinct_ancestors",
+			current: "/usr/bin/cat",
+			ancestors: []CELAncestor{
+				{ExecPath: "/usr/bin/node", Argv: []string{"node", "inner"}},
+				{ExecPath: "/bin/bash"},
+				{ExecPath: "/usr/bin/node", Argv: []string{"node", "outer"}},
+			},
+			wantPaths: [][]string{{}, {"/usr/bin/node"}, {"/bin/bash", "/usr/bin/node"}},
 		},
 	}
 
@@ -496,7 +506,7 @@ func TestAncestorDescendantsFieldReturnsList(t *testing.T) {
 				ancestors := p.ancestorsVal.(traits.Lister)
 				return ancestors.Get(types.Int(2)).(ancestorVal).Value().(CELAncestor)
 			}(),
-			wantPaths: []string{"/bin/sh", "/usr/bin/python"},
+			wantPaths: []string{"/usr/bin/python", "/bin/sh"},
 		},
 	}
 
@@ -533,18 +543,18 @@ func TestNewCELProcessNestedDescendantCache(t *testing.T) {
 		wantPaths []string
 	}{
 		{
-			name:      "bash_sees_sh_and_python",
+			name:      "bash_sees_python_and_sh",
 			ancestor:  bash,
-			wantPaths: []string{"/bin/sh", "/usr/bin/python"},
+			wantPaths: []string{"/usr/bin/python", "/bin/sh"},
 		},
 		{
 			name:      "python_sees_only_sh",
-			ancestor:  bashDescendants.Get(types.Int(1)).(ancestorVal).Value().(CELAncestor),
+			ancestor:  bashDescendants.Get(types.Int(0)).(ancestorVal).Value().(CELAncestor),
 			wantPaths: []string{"/bin/sh"},
 		},
 		{
 			name:      "sh_sees_empty_descendants",
-			ancestor:  bashDescendants.Get(types.Int(0)).(ancestorVal).Value().(CELAncestor),
+			ancestor:  bashDescendants.Get(types.Int(1)).(ancestorVal).Value().(CELAncestor),
 			wantPaths: []string{},
 		},
 	}

@@ -160,9 +160,9 @@ func NewCELProcess(execPath string, argv []string, ancestors []CELAncestor) CELP
 }
 
 func withDescendants(ancestors []CELAncestor) []CELAncestor {
-	// Own the ancestor slice before wiring descendants. Descendants point
-	// back into this backing array, so keeping the caller-owned slice would
-	// let later caller mutations change the CEL evaluation view.
+	// Own the ancestor slice before wiring descendants. The CEL evaluation
+	// view must not change if the caller later mutates or reuses the input
+	// slice.
 	out := slices.Clone(ancestors)
 	for i := range out {
 		// Clone copies the unexported cache fields too. Drop them before
@@ -184,13 +184,21 @@ func withDescendants(ancestors []CELAncestor) []CELAncestor {
 		//
 		//   out = [sh, npm, Runner]
 		//
-		// For npm (i=1), descendants are out[:1] == [sh].
-		// For Runner (i=2), descendants are out[:2] == [sh, npm].
+		// Descendants are exposed in tree-walk order from the selected
+		// ancestor toward the current process:
 		//
-		// The third index closes capacity. Descendants are immutable views,
-		// but if future code accidentally appends to one, it must allocate a
-		// new array instead of overwriting later ancestors in out.
-		out[i].Descendants = out[:i:i]
+		//   npm.descendants    = [sh]
+		//   Runner.descendants = [npm, sh]
+		//
+		// A simple prefix view out[:i] would be cheaper, but it would expose
+		// [sh, npm] for Runner because process.ancestors itself is stored
+		// newest-first. Build the small reversed slice so rule authors can
+		// read descendants in parent -> child order.
+		descendants := make([]CELAncestor, i)
+		for j := range descendants {
+			descendants[j] = out[i-1-j]
+		}
+		out[i].Descendants = descendants
 	}
 	return out
 }
@@ -225,9 +233,10 @@ func buildStringRefList(xs []string) ref.Val {
 }
 
 // buildAncestorRefList wraps each ancestor in ancestorVal with its
-// hot-field caches pre-populated. It derives descendants from the
-// newest-first list order: index i can only see the prefix xs[:i], so
-// nested descendants always get shorter and cannot cycle.
+// hot-field caches pre-populated. Descendants are already wired by
+// withDescendants in rule-visible parent -> child order. Nested descendants
+// are safe to pre-box because each step moves closer to the current process,
+// so the descendant path gets shorter and cannot cycle.
 //
 // The loop body writes cache fields directly instead of going through a
 // helper that would take &a; that's deliberate. A helper accepting
@@ -242,7 +251,7 @@ func buildAncestorRefList(xs []CELAncestor) ref.Val {
 	for i, a := range xs {
 		a.execPathVal = types.String(a.ExecPath)
 		a.argvVal = buildStringRefList(a.Argv)
-		a.descendantsVal = types.NewRefValList(types.DefaultTypeAdapter, out[:i:i])
+		a.descendantsVal = buildAncestorRefList(a.Descendants)
 		out[i] = newCELAncestorVal(a)
 	}
 	return types.NewRefValList(types.DefaultTypeAdapter, out)

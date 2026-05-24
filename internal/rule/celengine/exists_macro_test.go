@@ -309,6 +309,34 @@ func TestExistsMacroBehavioralCoverage(t *testing.T) {
 			wantMatch: true,
 		},
 		{
+			name:      "source/repeated_executable_outer_node_sees_bash_descendant",
+			eventType: jobevent.ProcessExec,
+			source: `process.ancestors.exists(a,
+                a.exec_path.endsWith("/node") &&
+                a.argv.exists(arg, arg == "outer") &&
+                a.descendants.exists(d, d.exec_path.endsWith("/bash")))`,
+			input: CELInputEvent{Process: NewCELProcess("/usr/bin/cat", nil, []CELAncestor{
+				{ExecPath: "/usr/bin/node", Argv: []string{"node", "inner"}},
+				{ExecPath: "/bin/bash"},
+				{ExecPath: "/usr/bin/node", Argv: []string{"node", "outer"}},
+			})},
+			wantMatch: true,
+		},
+		{
+			name:      "source/repeated_executable_inner_node_does_not_see_bash_descendant",
+			eventType: jobevent.ProcessExec,
+			source: `process.ancestors.exists(a,
+                a.exec_path.endsWith("/node") &&
+                a.argv.exists(arg, arg == "inner") &&
+                a.descendants.exists(d, d.exec_path.endsWith("/bash")))`,
+			input: CELInputEvent{Process: NewCELProcess("/usr/bin/cat", nil, []CELAncestor{
+				{ExecPath: "/usr/bin/node", Argv: []string{"node", "inner"}},
+				{ExecPath: "/bin/bash"},
+				{ExecPath: "/usr/bin/node", Argv: []string{"node", "outer"}},
+			})},
+			wantMatch: false,
+		},
+		{
 			name:      "source/empty_argv_returns_false",
 			eventType: jobevent.ProcessExec,
 			source:    `process.argv.exists(a, a == "anything")`,

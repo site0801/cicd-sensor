@@ -112,20 +112,7 @@ func (variableSizeEstimator) EstimateSize(node checker.AstNode) *checker.SizeEst
 			if len(p) < 3 || p[2] != "@items" {
 				return &checker.SizeEstimate{Min: 0, Max: ancestorTypicalItems}
 			}
-			if len(p) < 4 {
-				return nil
-			}
-			switch p[3] {
-			case "exec_path":
-				return &checker.SizeEstimate{Min: 0, Max: pathTypicalBytes}
-			case "argv":
-				if len(p) >= 5 && p[4] == "@items" {
-					return &checker.SizeEstimate{Min: 0, Max: argvItemTypicalBytes}
-				}
-				return &checker.SizeEstimate{Min: 0, Max: argvTypicalItems}
-			case "descendants":
-				return &checker.SizeEstimate{Min: 0, Max: ancestorTypicalItems}
-			}
+			return estimateAncestorPathSize(p[3:])
 		}
 		return nil
 	case "list":
@@ -133,6 +120,27 @@ func (variableSizeEstimator) EstimateSize(node checker.AstNode) *checker.SizeEst
 			return &checker.SizeEstimate{Min: 0, Max: listItemTypicalBytes}
 		}
 		return &checker.SizeEstimate{Min: 0, Max: listTypicalItems}
+	}
+	return nil
+}
+
+func estimateAncestorPathSize(p []string) *checker.SizeEstimate {
+	if len(p) == 0 {
+		return nil
+	}
+	switch p[0] {
+	case "exec_path":
+		return &checker.SizeEstimate{Min: 0, Max: pathTypicalBytes}
+	case "argv":
+		if len(p) >= 2 && p[1] == "@items" {
+			return &checker.SizeEstimate{Min: 0, Max: argvItemTypicalBytes}
+		}
+		return &checker.SizeEstimate{Min: 0, Max: argvTypicalItems}
+	case "descendants":
+		if len(p) >= 2 && p[1] == "@items" {
+			return estimateAncestorPathSize(p[2:])
+		}
+		return &checker.SizeEstimate{Min: 0, Max: ancestorTypicalItems}
 	}
 	return nil
 }
