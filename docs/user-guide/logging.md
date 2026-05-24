@@ -28,8 +28,6 @@ Every log entry carries these top-level fields, regardless of log type.
 | `scope` | `host` for self-hosted configuration, `project` for GitHub Action invocations |
 | `runner_type` | Runner type, such as `machine` |
 
-`summary_log` additionally carries `config_revision` — the manager config revision used for this job, or `(none)`.
-
 ## Job context
 
 Every log entry includes a `job` object.
