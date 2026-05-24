@@ -21,7 +21,7 @@ Allow outbound HTTPS from the Agent host to the Manager URL.
 
 | Destination | Purpose |
 | --- | --- |
-| Manager URL | Fetch config and rules, and send Job Result Logs, Detection Logs, and Runtime Telemetry Logs |
+| Manager URL | Fetch config and rules, and send Summary Logs, Detection Logs, and Runtime Event Logs |
 
 When using Manager, the Agent does not connect directly to the public baseline rule registries or the host used to fetch Sigstore root certificates.
 The Manager fetches and verifies baseline rules.
@@ -53,7 +53,7 @@ sudo mv /opt/cicd-sensor/cicd-sensorctl-linux-<arch> /opt/cicd-sensor/cicd-senso
 
 This guide runs the Agent and Docker proxy as root.
 
-The Agent needs root-equivalent privileges for eBPF, cgroup, and process telemetry.
+The Agent needs root-equivalent privileges to attach eBPF programs, read cgroup state, and trace process activity.
 The Docker proxy and Agent must also run with the same privileges because the proxy uses peer UID checks when calling Agent internal endpoints.
 
 ## Manager token
