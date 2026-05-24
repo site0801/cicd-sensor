@@ -257,13 +257,16 @@ logs:
     sink: pubsub-runtime-event
 ```
 
-For GCS / Pub/Sub authentication, the manager process uses standard Google Cloud Application Default Credentials.
+### Sink authentication
+
+The manager authenticates to each cloud sink using the cloud SDK's standard credential discovery. Configure credentials via the runtime environment — do not write any credentials into `manager.yaml`. Cloud credentials are held only by the manager process; the Agent does not receive them.
+
+#### Google Cloud (GCS, Pub/Sub)
+
+The manager uses [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials).
 On GKE / GCE, grant access with Workload Identity or an attached service account. In other environments, use the standard runtime mechanism such as `GOOGLE_APPLICATION_CREDENTIALS`.
 
-For S3 authentication, the manager process uses the standard AWS default credential chain.
+#### AWS (S3)
+
+The manager uses the [AWS default credentials provider chain](https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html).
 On EKS / ECS / EC2, grant access with an IAM role attached to the workload (EKS Pod Identity / IRSA, ECS task role, or EC2 instance profile). In other environments, use the standard runtime mechanism such as `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` environment variables or the shared credentials file (`~/.aws/credentials`).
-
-Do not write any credentials into `manager.yaml`.
-
-Cloud credentials for S3 / GCS / Pub/Sub are held only by the manager process.
-The Agent does not receive cloud credentials.
