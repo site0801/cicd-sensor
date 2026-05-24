@@ -1214,7 +1214,7 @@ body {
       el('span', { class: 'sep', text: ' · ' }),
       el('span', { class: 'k', text: 'branch' }),
       document.createTextNode(' '),
-      el('span', { class: 'v', text: meta.branch || '' }),
+      el('span', { class: 'v', text: meta.ref_name || '' }),
       el('span', { class: 'sep', text: ' · ' }),
       el('span', { class: 'k', text: 'commit' }),
       document.createTextNode(' '),
@@ -1226,7 +1226,7 @@ body {
       el('span', { class: 'sep', text: ' · ' }),
       el('span', { class: 'k', text: 'actor' }),
       document.createTextNode(' '),
-      el('span', { class: 'v', text: meta.actor || '' })
+      el('span', { class: 'v', text: meta.actor_name || '' })
     );
     var right = el('div', { class: 'topbar-right' },
       el('div', { class: 'topbar-verdict ' + verdictClass(rsum.result || '') },
@@ -1338,13 +1338,13 @@ body {
     var jobCtx = el('div', { class: 'side-job' });
     jobCtx.append(
       ctxRow('repository', identity.project_path),
-      ctxRow('branch', meta.branch),
+      ctxRow('branch', meta.ref_name),
       ctxRow('commit', meta.commit_sha),
-      ctxRow('workflow', meta.workflow),
-      ctxRow('workflow_ref', meta.workflow_ref),
-      ctxRow('workflow_sha', meta.workflow_sha),
+      ctxRow('workflow', meta.github_workflow),
+      ctxRow('workflow_ref', meta.github_workflow_ref),
+      ctxRow('workflow_sha', meta.github_workflow_sha),
       ctxRow('trigger', meta.trigger),
-      ctxRow('actor', meta.actor),
+      ctxRow('actor', meta.actor_name),
       ctxRow('runner', d.runner_type),
       ctxRow('job', identity.github_job),
       ctxRow('run id', identity.github_run_id ? (identity.github_run_id + ' · attempt ' + identity.github_run_attempt) : ''),
