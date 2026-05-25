@@ -1,0 +1,26 @@
+# This file runs only on the GitLab: github.com/cicd-sensor/cicd-sensor
+# Mirror sync is driven by a Pipeline Schedule (GitLab CI/CD).
+stages:
+  - sync
+
+mirror_from_github:
+  stage: sync
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+  image: cgr.dev/chainguard/wolfi-base:latest
+  resource_group: mirror
+  variables:
+    GIT_STRATEGY: none
+    GITHUB_REPO_URL: "https://github.com/cicd-sensor/cicd-sensor.git"
+  before_script:
+    - apk add --no-cache git openssh-client
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$MIRROR_SSH_KEY_B64" | base64 -d > ~/.ssh/id_mirror
+    - chmod 600 ~/.ssh/id_mirror
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_mirror
+    - ssh-keyscan -H "$CI_SERVER_HOST" >> ~/.ssh/known_hosts
+  script:
+    - git clone --mirror "$GITHUB_REPO_URL" mirror.git
+    - cd mirror.git
+    - git push --mirror "git@${CI_SERVER_HOST}:${CI_PROJECT_PATH}.git"
