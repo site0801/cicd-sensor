@@ -84,6 +84,10 @@ Linux kernel: 5.15 or later on `amd64`, 6.1 or later on `arm64`.
 - [Attestation predicate](https://cicd-sensor.github.io/user-guide/attestation-predicate.html) — runtime-trace predicate for CI/CD runtime evidence.
 - [Developer Guide](https://cicd-sensor.github.io/developer-guide/overview.html) — agent, eBPF runtime, manager, and rule engine internals.
 
+## Mirror
+
+A read-only official mirror of this repository is published at [gitlab.com/cicd-sensor/cicd-sensor](https://gitlab.com/cicd-sensor/cicd-sensor). GitHub is the canonical source; the GitLab mirror is synced periodically from this repository.
+
 ## License
 
 Apache License 2.0 ([LICENSE](LICENSE)). BPF source under `internal/agent/bpf/` is dual-licensed `GPL-2.0-only OR BSD-2-Clause` ([details](internal/agent/bpf/README.md#licensing)).
