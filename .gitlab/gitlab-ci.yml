@@ -21,6 +21,7 @@ mirror_from_github:
     - ssh-add ~/.ssh/id_mirror
     - ssh-keyscan -H "$CI_SERVER_HOST" >> ~/.ssh/known_hosts
   script:
-    - git clone --mirror "$GITHUB_REPO_URL" mirror.git
+    - git clone --bare --single-branch --branch main "$GITHUB_REPO_URL" mirror.git
     - cd mirror.git
-    - git push --mirror "git@${CI_SERVER_HOST}:${CI_PROJECT_PATH}.git"
+    - git fetch origin '+refs/tags/*:refs/tags/*'
+    - git push --prune "git@${CI_SERVER_HOST}:${CI_PROJECT_PATH}.git" '+refs/heads/main:refs/heads/main' '+refs/tags/*:refs/tags/*'
