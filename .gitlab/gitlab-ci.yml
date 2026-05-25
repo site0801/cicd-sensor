@@ -15,7 +15,7 @@ mirror_from_github:
   before_script:
     - apk add --no-cache git openssh-client
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - echo "$MIRROR_SSH_KEY_B64" | base64 -d > ~/.ssh/id_mirror
+    - printf '%s' "$MIRROR_SSH_KEY_B64" | base64 -d > ~/.ssh/id_mirror
     - chmod 600 ~/.ssh/id_mirror
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_mirror
