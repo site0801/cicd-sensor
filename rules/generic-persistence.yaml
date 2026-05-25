@@ -1,0 +1,100 @@
+rule_sets:
+  - ruleset_id: cicd_sensor_baseline/generic_persistence
+    lists:
+      supplychain_python_suffixes:
+        - "/python"
+        - "/python3"
+        - "/pip"
+        - "/pip3"
+        - "/poetry"
+      supplychain_user_systemd_fragments:
+        - "/.config/systemd/user/"
+      supplychain_systemctl_user_persistence_verbs:
+        - "daemon-reload"
+        - "enable"
+        - "link"
+        - "restart"
+        - "start"
+    rules:
+      - rule_id: supplychain_systemctl_user_persistence_operation
+        rule_name: "Supply-chain: user systemd persistence operation"
+        description: |
+          What:
+            Detects systemctl --user operations that can activate or refresh user service persistence.
+          Why:
+            Malicious packages and Python payloads have used user systemd services for persistence.
+          Notes:
+            Review recent ~/.config/systemd/user writes and add exceptions only for workflows that intentionally test systemd behavior.
+        event_type: process_exec
+        condition: |
+          process.exec_path.endsWith("/systemctl") &&
+          process.argv.exists(arg, arg == "--user") &&
+          process.argv.exists(arg,
+            list.supplychain_systemctl_user_persistence_verbs.exists(v, arg == v)
+          )
+        action: detect
+        tags:
+          mitre_tactic: persistence
+
+      - rule_id: supplychain_user_systemd_service_write
+        rule_name: "Supply-chain: user systemd service write"
+        description: |
+          What:
+            Detects writes to user systemd service files.
+          Why:
+            A service unit can persist payload execution across sessions or jobs, especially on self-hosted runners and developer machines.
+          Notes:
+            Inspect the service content and check whether package or Python ancestry led to the write.
+        event_type: file_open
+        condition: |
+          is_write &&
+          path.endsWith(".service") &&
+          list.supplychain_user_systemd_fragments.exists(p, path.contains(p))
+        action: detect
+        tags:
+          mitre_tactic: persistence
+
+      - rule_id: supplychain_python_pth_autoload_write
+        rule_name: "Supply-chain: Python .pth autoload write"
+        description: |
+          What:
+            Collects Python .pth writes below Python-related ancestry.
+          Why:
+            .pth files can execute code on later Python startup, but package installation can also legitimately write them.
+          Notes:
+            Correlate with credential access, payload download, or unexpected execution before treating it as a detection.
+        event_type: file_open
+        condition: |
+          is_write &&
+          path.contains("/site-packages/") &&
+          path.endsWith(".pth") &&
+          process.ancestors.exists(a,
+            list.supplychain_python_suffixes.exists(p, a.exec_path.endsWith(p))
+          )
+        action: collect
+        tags:
+          mitre_tactic: persistence
+
+      - rule_id: supplychain_python_startup_hook_write
+        rule_name: "Supply-chain: Python startup hook write"
+        description: |
+          What:
+            Detects writes to sitecustomize.py or usercustomize.py below Python-related ancestry.
+          Why:
+            These files are interpreter startup hooks and are rarely written during normal CI workloads.
+          Notes:
+            Review the writing package and remove or quarantine unexpected startup hooks.
+        event_type: file_open
+        condition: |
+          is_write &&
+          path.contains("/site-packages/") &&
+          (
+            path.endsWith("/sitecustomize.py") ||
+            path.endsWith("/usercustomize.py")
+          ) &&
+          process.ancestors.exists(a,
+            list.supplychain_python_suffixes.exists(p, a.exec_path.endsWith(p))
+          )
+        action: detect
+        tags:
+          mitre_tactic: persistence

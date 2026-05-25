@@ -3,18 +3,25 @@ rule_sets:
     rules:
       - rule_id: testevent_domain_lookup
         rule_name: "Testevent: cicd-sensor canary domain looked up"
-        description: Synthetic canary for domain lookup runtime events.
+        description: |
+          What:
+            Detects the synthetic canary domain lookup event.
+          Why:
+            This verifies that domain lookup telemetry and rule evaluation are working.
+          Notes:
+            This is a self-test rule, not a security detection.
         event_type: domain
         condition: domain == "testevent.cicd-sensor.com"
         action: detect
-        tags:
-          category: self-test
-
       - rule_id: testevent_file_write
         rule_name: "Testevent: cicd-sensor canary file written"
-        description: Synthetic canary for file write runtime events.
+        description: |
+          What:
+            Detects the synthetic canary file write event.
+          Why:
+            This verifies that file write telemetry and rule evaluation are working.
+          Notes:
+            This is a self-test rule, not a security detection.
         event_type: file_open
         condition: is_write && path.endsWith("/cicd-sensor-testevent.txt")
         action: detect
-        tags:
-          category: self-test

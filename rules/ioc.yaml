@@ -1,16 +1,21 @@
 rule_sets:
   - ruleset_id: cicd_sensor_baseline/ioc
+    # This file currently carries one example IOC. Add future short-lived,
+    # high-confidence campaign indicators here.
     rules:
       - rule_id: ioc_mini_shaihulud_antv_c2_domain
         rule_name: "IOC: Mini Shai-Hulud AntV C2 domain"
         description: |
-          Terminates lookup of the Mini Shai-Hulud AntV campaign C2 domain
-          reported by Chainguard in May 2026. This is an IOC rule, not a
-          general behavior rule. Treat a hit as active compromise, preserve job
-          logs and artifacts, and rotate credentials reachable from the job.
+          What:
+            Terminates lookup of a Mini Shai-Hulud AntV campaign C2 domain reported by Chainguard in May 2026.
+          Why:
+            This is a specific active-compromise IOC, not a general behavior rule.
+          Notes:
+            Preserve job logs and artifacts, then rotate credentials reachable from the job.
         event_type: domain
         condition: domain == "t.m-kosche.com"
         action: terminate
         tags:
-          category: ioc
+          mitre_tactic: command-and-control
+          ioc_date: "2026-05-19"
           source_url: https://www.chainguard.dev/unchained/mini-shai-hulud-npm-attack-antv-ecosystem-compromise-may-2026

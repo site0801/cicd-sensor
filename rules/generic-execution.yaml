@@ -1,0 +1,22 @@
+rule_sets:
+  - ruleset_id: cicd_sensor_baseline/generic_execution
+    rules:
+      - rule_id: supplychain_python_tmp_pyz_exec
+        rule_name: "Supply-chain: Python archive payload executed from /tmp"
+        description: |
+          What:
+            Detects Python executing a .pyz archive from /tmp.
+          Why:
+            Import-time and install-time payloads may execute a downloaded Python archive as a second stage.
+          Notes:
+            Review the parent process, recover the archive if available, and check for credential access or network egress.
+        event_type: process_exec
+        condition: |
+          (
+            process.exec_path.endsWith("/python") ||
+            process.exec_path.endsWith("/python3")
+          ) &&
+          process.argv.exists(arg, arg.contains("/tmp/") && arg.endsWith(".pyz"))
+        action: detect
+        tags:
+          mitre_tactic: execution

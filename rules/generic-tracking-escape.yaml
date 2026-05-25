@@ -1,0 +1,34 @@
+rule_sets:
+  - ruleset_id: cicd_sensor_baseline/generic_tracking_escape
+    rules:
+      - rule_id: supplychain_docker_upstream_socket_access
+        rule_name: "Supply-chain: real Docker upstream socket access"
+        description: |
+          What:
+            Terminates direct access to docker-upstream.sock, the real Docker daemon socket behind cicd-sensor's Docker proxy.
+          Why:
+            Accessing the upstream Docker socket can create containers outside cicd-sensor's monitored job lineage.
+          Notes:
+            Review the connecting process and inspect any container activity that may have escaped cicd-sensor tracking before termination.
+        event_type: unix_socket_connect
+        condition: |
+          path.endsWith("/docker-upstream.sock")
+        action: terminate
+        tags:
+          mitre_tactic: defense-evasion
+
+      - rule_id: supplychain_systemd_run_tracking_escape
+        rule_name: "Supply-chain: systemd-run tracking escape"
+        description: |
+          What:
+            Detects systemd-run execution that can start transient systemd services or scopes.
+          Why:
+            systemd-run can move execution outside cicd-sensor's monitored job process lineage.
+          Notes:
+            Review the requested unit or command and add an exception only for workflows that intentionally start systemd-managed work.
+        event_type: process_exec
+        condition: |
+          process.exec_path.endsWith("/systemd-run")
+        action: detect
+        tags:
+          mitre_tactic: defense-evasion,persistence

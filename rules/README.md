@@ -13,6 +13,12 @@ single ruleset, which the release pipeline publishes. When the agent begins
 monitoring a CI run, it fetches that latest released ruleset and applies it
 for the duration of that run.
 
+## IOC Rules
+
+`ioc.yaml` is reserved for high-confidence campaign indicators. It currently
+contains one example IOC and is expected to grow as we add short-lived,
+source-backed indicators that are too specific for the generic baseline rules.
+
 ## Validation
 
 Validate locally:
