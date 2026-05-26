@@ -8,10 +8,21 @@ The source of truth for design is `docs/`.
 - `docs/index.md` — project goal and supported platforms
 - `docs/user-guide/overview.md` — runner environments and usage models
 - `docs/developer-guide/overview.md` — repository layout and subsystem reading order
-- `docs/developer-guide/agent.md` — Job / Scope / JobRegistry / KernelTracker model
-- `docs/developer-guide/ebpf-runtime.md` — cgroup v2 tracking and BPF map boundary
+- `docs/developer-guide/agent.md` — Job / Scope / JobRegistry / KernelTracker model and the scope ownership rules
+- `docs/developer-guide/ebpf-runtime.md` — cgroup v2 tracking, BPF map boundary, eBPF code style and contribution contract
 - `docs/developer-guide/manager.md` — config and log delivery boundary
 - `docs/developer-guide/rule-engine.md` — RuleSet / RuleModifier / CEL flow
+
+## Detailed rules
+
+This file holds the load-bearing rules. The files below add detail that only applies when touching specific paths. Read the relevant one before changing code in that area.
+
+| File | Apply when |
+| --- | --- |
+| `.claude/rules/10-code.md` | Touching `**/*.go`, `go.mod`, `go.sum`. Go baseline, tooling, style, comments. |
+| `.claude/rules/11-testing.md` | Writing or reviewing tests. Required test-case table and coverage-perspective table. |
+| `.claude/rules/30-cel-rules.md` | Touching `rules/**`, `internal/rule/**`. RuleSet / RuleModifier schema, CEL surface, event-type sources. |
+| `.claude/rules/50-supply-chain.md` | Touching `.github/**`, `.gitlab-ci.yml`, Dependabot, or Renovate config. SHA pinning and cooldown. |
 
 ## Repository layout
 
@@ -32,45 +43,21 @@ The source of truth for design is `docs/`.
 
 The Agent is built from several components, each owning a different boundary. Before writing code, identify which component owns the state, lifecycle, or interface you are touching. Do not let responsibilities leak across components.
 
-- Keep changes small. Prefer minimal, explicit implementations over speculative abstractions.
-- Standard tooling first. Ad-hoc rewrites are a last resort.
-
 | Component | Owns |
 | --- | --- |
+| `Agent` | Top-level process-wide orchestrator. Owns the control socket, provider selection, runner type, host manager connection / client, and shutdown lifecycle. |
 | `Listener` | Unix-socket entrypoint for `host start`, `project start`, and dockerd proxy staging. Provider routes and peer credentials. |
-| `JobRegistry` | Job registration, host / project scope attachment, KernelTracker primitive composition, and finalize. Holds only host-owned dependencies shared across Jobs. |
+| `JobRegistry` | Active jobs catalog and KernelTracker binding. Host-start methods receive the host manager client as a parameter; it is not held here. |
 | `Job` | One CI/CD job's lifecycle, identity, and event worker. |
-| `Scope` (host / project) | Per-scope rules, evaluation state, and outputs. Host and project are owned by different operators and stay isolated. |
+| `JobScopeState` | Per-scope state for one Job — one host instance and / or one project instance per Job. Holds the Job's `RuleSets`, `RuleModifiers`, `OutputSettings`, and scope-local manager output config. |
+| `Host scope` | The configuration surface owned by the runner host operator (the platform team installing cicd-sensor on the runner). It arrives via `host start` from a runner hook, and is used when the host enforces a baseline across every job on the runner — typically on self-hosted runners. |
+| `Project scope` | The configuration surface owned by the project / repository operator (the team writing the CI workflow). It arrives via `project start` from the cicd-sensor-action (or equivalent), and lets each workflow bring its own rules and outputs — typically on GitHub-hosted runners. |
 | `KernelTracker` | Userspace cgroup / process tracking, decoded sample domain, and EventRecord attribution. |
 | `KernelIO` | BPF object load, attach, ringbuf read, and map operations. |
 | `Docker proxy` | Mediates dockerd API and stages container cgroup basenames so jobs can track containers created through the host Docker socket. |
 | `Outputs` | Per-scope runtime summaries used for job logs, project results, reports, and attestations. |
 
-See `docs/developer-guide/agent.md` and `docs/developer-guide/ebpf-runtime.md` for the full model.
-
-## Go
-
-- Go `1.26+` (`go.mod`). Prefer modern idioms supported by this version.
-- Prefer concrete, simple, readable code over abstract, generic abstractions. Don't generalize until it's actually needed.
-- Use `gofmt`, `go vet`, `go test`, and `go test -race` for concurrency changes.
-- `context.Context` is the first parameter; wrap errors with `%w`; compare with `errors.Is` / `errors.As`.
-- Avoid `init()` and `panic` outside `main` / tests. Rule, config, and CEL input must not crash the process.
-- Use `log/slog`; no `fmt.Println` debug output.
-- For file access with untrusted paths, use `os.OpenRoot` / `os.OpenInRoot`. Do not rely on `filepath.Clean` / prefix checks as the primary defense.
-- Keep comments clear and simple. Write Why, not a paraphrase of the code. Add godoc on exported symbols.
-
-## eBPF (`internal/agent/bpf`)
-
-- Kernel baseline is Linux `5.15+`. Call out version-dependent behavior in comments.
-- Do not edit `bpf2go`-generated files. Fix the C source or the generator input.
-- BPF map state is intentionally small. Rich state (JobIdentity, process context) lives in the KernelTracker userspace mirror. See `docs/developer-guide/ebpf-runtime.md`.
-- Job membership is determined by cgroup tracking. Do not reinterpret process ancestry as the job boundary.
-
-## Rules (`rules/`, `internal/rule`)
-
-- The CEL surface is intentionally narrow (no regex, no index access, no arithmetic). Do not widen it casually.
-- `rule_sets:` and `rule_modifiers:` cannot share a YAML document.
-- Event-type field truth lives in `docs/user-guide/rule-event-types.md` and `docs/user-guide/rule-cel-conditions.md`.
+A single Job may carry one scope or both. Each scope owns its own rules, evaluation state, and outputs, and the two are isolated: neither operator can read or override the other's rules, and their outputs are emitted separately. This is the security boundary of the agent — see `docs/developer-guide/agent.md` (including the **Scope Ownership** section) for the design source of truth. For the kernel-side model, see `docs/developer-guide/ebpf-runtime.md`.
 
 ## Commits
 
