@@ -15,14 +15,24 @@ The source of truth for design is `docs/`.
 
 ## Detailed rules
 
-This file holds the load-bearing rules. The files below add detail that only applies when touching specific paths. Read the relevant one before changing code in that area.
+The files below add detail that only applies when touching specific paths. **They apply to any AI coding agent working in this repo — Claude Code, Codex, Gemini, or otherwise. The `.claude/` directory is only there because Claude Code auto-loads from that path; the contents are not Claude-specific.** Read the relevant one before changing code in that area.
 
 | File | Apply when |
 | --- | --- |
 | `.claude/rules/10-code.md` | Touching `**/*.go`, `go.mod`, `go.sum`. Go baseline, tooling, style, comments. |
-| `.claude/rules/11-testing.md` | Writing or reviewing tests. Required test-case table and coverage-perspective table. |
+| `.claude/rules/20-testing.md` | Writing or reviewing tests. Required test-case table and coverage-perspective table. |
 | `.claude/rules/30-cel-rules.md` | Touching `rules/**`, `internal/rule/**`. RuleSet / RuleModifier schema, CEL surface, event-type sources. |
-| `.claude/rules/50-supply-chain.md` | Touching `.github/**`, `.gitlab-ci.yml`, Dependabot, or Renovate config. SHA pinning and cooldown. |
+| `.claude/rules/40-supply-chain.md` | Touching `.github/**`, `.gitlab-ci.yml`, Dependabot, or Renovate config. SHA pinning and cooldown. |
+
+## Build and test
+
+- `make build` — build agent + manager binaries (Linux).
+- `make test` — run unit tests.
+- `go test -race ./...` — race detector (required for concurrency changes).
+- `make check` — `generate` + `test` + `rules-validate` + `rules-bundle-validate` + `diff-check` (the gate this repo uses before commit).
+- `make integration` / `make bpf-integration` — integration suites (need privileges; may require Linux).
+- `make rules-validate` — validate baseline rule YAML.
+- `make generate` — regenerate protobuf and bpf2go output (run after touching `proto/` or BPF C sources). BPF compilation runs through Docker, so macOS / Windows hosts work as long as Docker is available.
 
 ## Repository layout
 

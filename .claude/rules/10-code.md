@@ -108,4 +108,4 @@ Reach for these when they fit, but Style above wins if they conflict.
 
 ## Testing
 
-See `.claude/rules/11-testing.md` for testing rules and the required output format.
+See `.claude/rules/20-testing.md` for testing rules and the required output format.
