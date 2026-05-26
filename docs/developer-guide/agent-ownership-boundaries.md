@@ -103,13 +103,5 @@ Host scope and project scope are separate rule sets, but they normally overlap h
 
 Rule evaluation is therefore done **per Job, not per scope**: `mergeEvaluationRules` de-duplicates rules across the Job's host and project `JobScopeState`s, `NewEvaluationState` compiles the merged set once, and each event is evaluated against that merged set in a single pass by the Job's one event worker. Per-rule `FeedHost` / `FeedProject` flags then route each hit back to the host `JobScopeState`, the project `JobScopeState`, or both. Scope isolation is preserved in the **output routing**, not by duplicating evaluation per scope.
 
-## Design Notes
-
-- Job membership is determined by cgroup tracking. Process context is a fat node snapshot with `exec_path` / `argv` / `ancestors`; it is not used as the job boundary.
-- KernelTracker state is owned exclusively by its loop goroutine. `jobTrackingState` is not published externally.
-- Listener stays as the delivery layer. Provider differences are contained in handlers and JobRegistry primitive composition.
-- Output runtime is scope-local. Host / project output queues are not hoisted into JobRegistry.
-- JobRegistry owns lifecycle. It is not on the hot path for event routing.
-
 For job lifecycle and tracking entrypoints, see [Agent Architecture](agent.md).
 For kernel-side observation details, see [eBPF Runtime](ebpf-runtime.md).

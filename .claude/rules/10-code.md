@@ -29,12 +29,12 @@ Component ownership is the security model. Misplacing a field is a boundary bug,
 
 ### Unix socket auth
 
-The control socket's filesystem mode is permissive (`controlSocketMode = 0o777` in `internal/agent/listener/listener.go`). Authorization is enforced through `SO_PEERCRED` peer credentials and cgroup tracking, not filesystem ACLs.
+The control socket is mode `0o777`. `SO_PEERCRED` + cgroup tracking identify the caller (which Job, which UID); they are not a strong access control — the security boundary lives in the runner VM / container. See `docs/developer-guide/agent.md#listener-trust-model`.
 
-- **Hook / lifecycle endpoints** (GitHub `host/start`, `host/end`, `project/start`, `project/result`, `job/health`) read the peer PID from `SO_PEERCRED` and either **seed** Job cgroup tracking (host start: the hook process's cgroup becomes the Job's tracked-cgroups root) or **require** the peer to already belong to a tracked Job (`ErrPeerNotInJob` on miss). See `JobRegistry.FindJobForPeerPID` and siblings in `internal/agent/jobregistry/`, and `docs/developer-guide/agent-ownership-boundaries.md` for the ownership rules.
-- **Agent-owner endpoints** (GitHub `staging/put`, GitLab `host/start`, GitLab `staging/put`) gate by `SO_PEERCRED` UID matching the agent process owner. See `requireRequestPeerUIDMatchesAgentOwner` in `internal/agent/listener/request_peer_linux.go`.
+When adding a socket endpoint, pick one of the existing identification patterns:
 
-A new socket endpoint picks one of these gates explicitly. Do not trust callers just because the socket file exists.
+- **Cgroup-bound** (Job lifecycle endpoints): peer PID's cgroup either seeds Job tracking or must already belong to a tracked Job. See `JobRegistry.FindJobForPeerPID`.
+- **Agent-owner UID** (staging and GitLab `host/start`): peer UID matches the agent process owner. See `requireRequestPeerUIDMatchesAgentOwner`.
 
 ### General
 
@@ -53,9 +53,8 @@ When a change accepts untrusted input and then performs a side effect — filesy
 - Keep changes small. Prefer concrete, simple, readable code. Don't generalize until needed.
 - Don't add a helper, interface, or layer until a clear second use case or test boundary exists. A few lines of duplication beat a confusing abstraction.
 - Don't split files or packages on planned future use. Split when the current responsibility actually divides.
-- Package names stay short. Avoid `util`, `common`, `helper`.
+- Package names state what the package contains. Avoid vague names like `util`, `common`, `helper`.
 - Check whether the standard library can replace a new helper or dependency before adding it.
-- YAML uses `go.yaml.in/yaml/v4`.
 
 ## Comments
 

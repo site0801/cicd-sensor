@@ -126,17 +126,19 @@ The Listener mounts either `/v1/github/*` or `/v1/gitlab/*`, not both.
 
 ## Listener trust model
 
-CI/CD runner hosts are treated as **host-disposable**: a compromised job already has full host-UID access, and isolation between runs is delegated to the layer below (fresh VM / container / per-job host). cicd-sensor follows that model — the runner host is a single trust boundary, not a hardened multi-tenant surface.
+A CI/CD job process typically has host-control-level permissions on the runner. Isolation between jobs comes from the layer below — a fresh VM per job for self-hosted runners, a fresh container for Kubernetes-based runners. cicd-sensor treats the runner host as a single trust domain inside that boundary.
 
-The control socket is therefore local-only with mode `0o777`; authorization is at the request layer via `SO_PEERCRED`, not filesystem ACLs.
+The Listener's per-request checks identify which Job (and which UID) the request belongs to, and keep each Job's events and configuration from being attributed to another Job. They are not a strong access control.
 
-| Gate | Endpoints | Check |
+The control socket is mode `0o777`; request identification uses `SO_PEERCRED`:
+
+| Check | Endpoints | What it confirms |
 | --- | --- | --- |
-| Agent-owner | GitLab `host/start`, GitHub / GitLab `staging/put` | peer UID == agent owner |
-| Existing Job | GitHub `project/start`, `project/result`, `host/end`, `job/health` | peer PID's cgroup is in a tracked Job |
-| None (seed) | GitHub `host/start` | peer's cgroup becomes the new Job's tracked root |
+| Agent-owner UID | GitLab `host/start`, GitHub / GitLab `staging/put` | peer UID matches the agent process owner |
+| Peer in tracked Job | GitHub `host/end`, `project/result`, `job/health` | peer PID's cgroup is in an already-tracked Job |
+| Seed | GitHub `host/start` | peer's cgroup becomes the new Job's tracked root |
 
-GitHub `host/start` carries no gate by design: the runner hook may not share the agent's UID, and there is no existing Job to validate against. Co-resident untrusted local users on the runner host are out of scope.
+GitHub `project/start` is the mixed case: on a self-hosted runner the peer must already belong to the host Job (it attaches project scope); on a hosted runner no prior Job exists, so the peer's cgroup seeds a new project-only Job. Co-resident untrusted local users are out of scope.
 
 ## KernelTracker Primitives
 
@@ -152,6 +154,14 @@ Job tracking is expressed by JobRegistry composing KernelTracker primitives.
 `RegisterJob` and cgroup binding are separate operations.
 GitHub can resolve the cgroup from the peer PID at start time, so it uses `RegisterJob + BindProcessCgroupToJob`.
 GitLab Docker executor registers a job from label identity evidence and waits for a later staging promote.
+
+## Design Notes
+
+- Job membership is determined by cgroup tracking. Process context is a fat node snapshot with `exec_path` / `argv` / `ancestors`; it is not used as the job boundary.
+- KernelTracker state is owned exclusively by its loop goroutine. `jobTrackingState` is not published externally.
+- Listener stays as the delivery layer. Provider differences are contained in handlers and JobRegistry primitive composition.
+- Output runtime is scope-local. Host / project output queues are not hoisted into JobRegistry.
+- JobRegistry owns lifecycle. It is not on the hot path for event routing.
 
 For kernel-side observation details, see [eBPF Runtime](ebpf-runtime.md).
 For Agent implementation ownership rules, see [Agent Ownership Boundaries](agent-ownership-boundaries.md).
