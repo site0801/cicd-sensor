@@ -6,6 +6,10 @@ BUF ?= buf
 SUDO ?= sudo
 VERSION ?= dev
 
+DOCKER ?= docker
+BPF_BUILDER_IMAGE ?= cicd-sensor-bpf-builder:dev
+BPF_BUILDER_DOCKERFILE := Dockerfile.bpf-builder
+
 export GOCACHE ?= $(CURDIR)/.gocache
 
 BIN_DIR := bin
@@ -44,9 +48,20 @@ generate: generate-proto generate-bpf
 generate-proto:
 	$(BUF) generate
 
+.PHONY: bpf-builder
+bpf-builder:
+	$(DOCKER) build -t $(BPF_BUILDER_IMAGE) -f $(BPF_BUILDER_DOCKERFILE) .
+
 .PHONY: generate-bpf
-generate-bpf:
-	$(GO) generate $(GO_MOD_FLAG) ./internal/agent/bpf
+generate-bpf: bpf-builder
+	$(DOCKER) run --rm \
+		--entrypoint $(GO) \
+		-v $(CURDIR):/src \
+		-w /src \
+		-u $$(id -u):$$(id -g) \
+		-e HOME=/src/.docker-home \
+		$(BPF_BUILDER_IMAGE) \
+		generate $(GO_MOD_FLAG) ./internal/agent/bpf
 
 .PHONY: tidy
 tidy:

@@ -36,6 +36,7 @@ book/
 .gomodcache/
 .tmp/
 /tmp/
+.docker-home/
 
 # Local review prompts and feedback notes
 /feedback.md
