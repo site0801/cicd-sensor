@@ -208,6 +208,20 @@ Rule evaluation is therefore done **per Job, not per scope**: `mergeEvaluationRu
 The agent process selects one provider at startup.
 The Listener mounts either `/v1/github/*` or `/v1/gitlab/*`, not both.
 
+## Listener trust model
+
+CI/CD runner hosts are treated as **host-disposable**: a compromised job already has full host-UID access, and isolation between runs is delegated to the layer below (fresh VM / container / per-job host). cicd-sensor follows that model — the runner host is a single trust boundary, not a hardened multi-tenant surface.
+
+The control socket is therefore local-only with mode `0o777`; authorization is at the request layer via `SO_PEERCRED`, not filesystem ACLs.
+
+| Gate | Endpoints | Check |
+| --- | --- | --- |
+| Agent-owner | GitLab `host/start`, GitHub / GitLab `staging/put` | peer UID == agent owner |
+| Existing Job | GitHub `project/start`, `project/result`, `host/end`, `job/health` | peer PID's cgroup is in a tracked Job |
+| None (seed) | GitHub `host/start` | peer's cgroup becomes the new Job's tracked root |
+
+GitHub `host/start` carries no gate by design: the runner hook may not share the agent's UID, and there is no existing Job to validate against. Co-resident untrusted local users on the runner host are out of scope.
+
 ## KernelTracker Primitives
 
 Job tracking is expressed by JobRegistry composing KernelTracker primitives.
