@@ -66,9 +66,9 @@ In self-hosted deployments, config and rules come from the manager, not from the
 | GitHub Actions | GitHub-hosted runner | Supported target |
 | GitHub Actions | Self-hosted Machine Runner | Supported target |
 | GitHub Actions | Actions Runner Controller on Kubernetes | Planned |
-| GitLab CI/CD | Self-hosted Container Executor | Supported target |
-| GitLab CI/CD | Self-hosted Kubernetes Executor | Planned |
-| GitLab CI/CD | Self-hosted Shell Executor | Not planned |
+| GitLab CI/CD | Self-hosted Docker executor | Supported target |
+| GitLab CI/CD | Self-hosted Kubernetes executor | Planned |
+| GitLab CI/CD | Self-hosted Shell executor | Not planned |
 | GitLab CI/CD | GitLab-hosted runner | Not supported due to technical constraints |
 
 GitLab-hosted runners are not supported today because cicd-sensor cannot install the Agent on the runner host.

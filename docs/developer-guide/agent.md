@@ -116,8 +116,8 @@ Each scope carries its own rules, evaluation state, and output destinations. The
 | --- | --- | --- | --- |
 | GitHub Actions | GitHub-hosted runner | `/v1/github/project/start` | cgroup of the project start peer PID |
 | GitHub Actions | Self-hosted Machine Runner | `/v1/github/host/start` | cgroup of the hook peer PID |
-| GitLab CI/CD | Self-hosted Container Executor | `/v1/gitlab/staging/put` -> lazy `/v1/gitlab/host/start` | Docker label evidence and staging promote |
-| GitHub ARC / GitLab Kubernetes Executor | Planned | TBD | NRI / Pod metadata and similar options are under consideration |
+| GitLab CI/CD | Self-hosted Docker executor | `/v1/gitlab/staging/put` -> lazy `/v1/gitlab/host/start` | Docker label evidence and staging promote |
+| GitHub ARC / GitLab Kubernetes executor | Planned | TBD | NRI / Pod metadata and similar options are under consideration |
 
 The agent process selects one provider at startup.
 The Listener mounts either `/v1/github/*` or `/v1/gitlab/*`, not both.
@@ -135,7 +135,7 @@ Job tracking is expressed by JobRegistry composing KernelTracker primitives.
 
 `RegisterJob` and cgroup binding are separate operations.
 GitHub can resolve the cgroup from the peer PID at start time, so it uses `RegisterJob + BindProcessCgroupToJob`.
-GitLab Container Executor registers a job from label identity evidence and waits for a later staging promote.
+GitLab Docker executor registers a job from label identity evidence and waits for a later staging promote.
 
 ## Design Notes
 

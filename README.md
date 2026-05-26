@@ -70,8 +70,8 @@ jobs:
 | GitHub Actions | GitHub-hosted runner | Supported |
 | GitHub Actions | Self-hosted Machine Runner | Supported |
 | GitHub Actions | Actions Runner Controller on Kubernetes | Planned |
-| GitLab CI/CD | Self-hosted Container Executor | Supported |
-| GitLab CI/CD | Self-hosted Kubernetes Executor | Planned |
+| GitLab CI/CD | Self-hosted Docker executor | Supported |
+| GitLab CI/CD | Self-hosted Kubernetes executor | Planned |
 | GitLab CI/CD | GitLab-hosted runner | Not supported (technical constraints) |
 
 Linux kernel: 5.15 or later on `amd64`, 6.1 or later on `arm64`.

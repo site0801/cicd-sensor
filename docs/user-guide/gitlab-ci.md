@@ -1,6 +1,6 @@
 # GitLab CI/CD self-hosted
 
-For GitLab CI/CD, the primary supported target is a self-hosted GitLab Runner using the Container Executor.
+For GitLab CI/CD, the primary supported target is a self-hosted GitLab Runner using the Docker executor.
 
 Complete [Self-hosted Machine install](self-hosted-install.md) first.
 Unlike GitHub Actions, GitLab CI/CD does not require workflow steps or project-side job hooks. The runner host-side Agent and Docker proxy monitor the job runtime.
@@ -9,21 +9,21 @@ Unlike GitHub Actions, GitLab CI/CD does not require workflow steps or project-s
 
 | Environment | Status |
 | --- | --- |
-| Self-hosted Container Executor | Supported target |
-| Self-hosted Kubernetes Executor | Planned |
-| Self-hosted Shell Executor | Not planned |
+| Self-hosted Docker executor | Supported target |
+| Self-hosted Kubernetes executor | Planned |
+| Self-hosted Shell executor | Not planned |
 | GitLab-hosted runner | Not supported due to technical constraints |
 
 GitLab-hosted runners are not supported today because cicd-sensor cannot install the Agent on the runner host.
 
 ## Deployment model
 
-GitLab Runner continues to run jobs with the Container Executor.
+GitLab Runner continues to run jobs with the Docker executor.
 cicd-sensor observes Docker container creation on the runner host, associates the job runtime with the Agent, and sends logs to the manager.
 
 ```mermaid
 flowchart LR
-    RUNNER["GitLab Runner<br/>Container Executor"]
+    RUNNER["GitLab Runner<br/>Docker executor"]
     PROXY["cicd-sensor Docker proxy"]
     DOCKER["Docker daemon"]
     AGENT["cicd-sensor Agent"]

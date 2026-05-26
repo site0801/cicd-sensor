@@ -1,6 +1,6 @@
 # Self-hosted Machine install
 
-This page covers the host-side setup shared by GitHub Actions Self-hosted Machine Runners and GitLab CI/CD Self-hosted Container Executors.
+This page covers the host-side setup shared by GitHub Actions Self-hosted Machine Runners and GitLab CI/CD Self-hosted Docker executors.
 
 In self-hosted deployments, install the cicd-sensor Agent and Docker proxy on the runner host and operate them with cicd-sensor Manager.
 For GitHub Actions-specific hook setup, see [GitHub Actions self-hosted](github-self-hosted.md).
@@ -86,7 +86,7 @@ Set `--provider` for the target environment.
 | Environment | `--provider` | `--runner` |
 | --- | --- | --- |
 | GitHub Actions Self-hosted Machine Runner | `github` | `machine` |
-| GitLab CI/CD Self-hosted Container Executor | `gitlab` | `machine` |
+| GitLab CI/CD Self-hosted Docker executor | `gitlab` | `machine` |
 
 ```ini
 # /etc/systemd/system/cicd-sensor-agent.service
