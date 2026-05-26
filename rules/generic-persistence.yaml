@@ -1,17 +1,17 @@
 rule_sets:
   - ruleset_id: cicd_sensor_baseline/generic_persistence
     lists:
-      supplychain_python_suffixes:
+      python_suffixes:
         - "/python"
         - "/python3"
         - "/pip"
         - "/pip3"
         - "/poetry"
 
-      supplychain_user_systemd_fragments:
+      user_systemd_fragments:
         - "/.config/systemd/user/"
 
-      supplychain_systemctl_user_persistence_verbs:
+      systemctl_user_persistence_verbs:
         - "daemon-reload"
         - "enable"
         - "link"
@@ -19,7 +19,7 @@ rule_sets:
         - "start"
 
     rules:
-      - rule_id: supplychain_systemctl_user_persistence_operation
+      - rule_id: systemctl_user_persistence_operation
         rule_name: "Supply-chain: user systemd persistence operation"
         description: |
           What:
@@ -33,13 +33,13 @@ rule_sets:
           process.exec_path.endsWith("/systemctl") &&
           process.argv.exists(arg, arg == "--user") &&
           process.argv.exists(arg,
-            list.supplychain_systemctl_user_persistence_verbs.exists(v, arg == v)
+            list.systemctl_user_persistence_verbs.exists(v, arg == v)
           )
         action: detect
         tags:
           mitre_tactic: persistence
 
-      - rule_id: supplychain_user_systemd_service_write
+      - rule_id: user_systemd_service_write
         rule_name: "Supply-chain: user systemd service write"
         description: |
           What:
@@ -52,12 +52,12 @@ rule_sets:
         condition: |
           is_write &&
           path.endsWith(".service") &&
-          list.supplychain_user_systemd_fragments.exists(p, path.contains(p))
+          list.user_systemd_fragments.exists(p, path.contains(p))
         action: detect
         tags:
           mitre_tactic: persistence
 
-      - rule_id: supplychain_python_pth_autoload_write
+      - rule_id: python_pth_autoload_write
         rule_name: "Supply-chain: Python .pth autoload write"
         description: |
           What:
@@ -72,13 +72,13 @@ rule_sets:
           path.contains("/site-packages/") &&
           path.endsWith(".pth") &&
           process.ancestors.exists(a,
-            list.supplychain_python_suffixes.exists(p, a.exec_path.endsWith(p))
+            list.python_suffixes.exists(p, a.exec_path.endsWith(p))
           )
         action: collect
         tags:
           mitre_tactic: persistence
 
-      - rule_id: supplychain_python_startup_hook_write
+      - rule_id: python_startup_hook_write
         rule_name: "Supply-chain: Python startup hook write"
         description: |
           What:
@@ -96,7 +96,7 @@ rule_sets:
             path.endsWith("/usercustomize.py")
           ) &&
           process.ancestors.exists(a,
-            list.supplychain_python_suffixes.exists(p, a.exec_path.endsWith(p))
+            list.python_suffixes.exists(p, a.exec_path.endsWith(p))
           )
         action: detect
         tags:

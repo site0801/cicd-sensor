@@ -4,7 +4,7 @@ rule_sets:
     # high-confidence campaign indicators here.
 
     rules:
-      - rule_id: ioc_mini_shaihulud_antv_c2_domain
+      - rule_id: mini_shaihulud_antv_c2_domain
         rule_name: "IOC: Mini Shai-Hulud AntV C2 domain"
         description: |
           What:

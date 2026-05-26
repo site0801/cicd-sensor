@@ -44,7 +44,7 @@ The actual predicate may contain more network addresses, domains, and rule hits.
       },
       {
         "ruleset_id": "cicd-sensor/testevent",
-        "rule_id": "testevent_domain_lookup",
+        "rule_id": "domain_lookup",
         "ruleset_revision": "f1c2a3b",
         "action": "detect",
         "count": 12

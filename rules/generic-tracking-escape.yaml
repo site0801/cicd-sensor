@@ -2,8 +2,8 @@ rule_sets:
   - ruleset_id: cicd_sensor_baseline/generic_tracking_escape
 
     rules:
-      - rule_id: supplychain_docker_upstream_socket_access
-        rule_name: "Supply-chain: real Docker upstream socket access"
+      - rule_id: docker_upstream_socket_access
+        rule_name: "Tracking escape: real Docker upstream socket access"
         description: |
           What:
             Terminates direct access to docker-upstream.sock, the real Docker daemon socket behind cicd-sensor's Docker proxy.
@@ -18,18 +18,57 @@ rule_sets:
         tags:
           mitre_tactic: defense-evasion
 
-      - rule_id: supplychain_systemd_run_tracking_escape
-        rule_name: "Supply-chain: systemd-run tracking escape"
+      - rule_id: dbus_bus_connect
+        rule_name: "Tracking escape: DBus bus connect (systemd-mediated escape primitive)"
         description: |
           What:
-            Detects systemd-run execution that can start transient systemd services or scopes.
+            Detects a Unix socket connect to the DBus system bus or per-user bus. All systemd-mediated escape paths — systemd-run, systemd-nspawn, machinectl, hostnamectl, or raw DBus clients reaching org.freedesktop.systemd1 / systemd-machined — funnel through this socket regardless of which CLI or library is used.
           Why:
-            systemd-run can move execution outside cicd-sensor's monitored job process lineage.
+            Detecting the binary by exec path is trivially bypassed (`cp /usr/bin/busctl /tmp/x && /tmp/x ...`) or sidestepped by calling the DBus protocol from a script. The bus connect is the protocol-level primitive that any DBus-mediated escape must perform.
           Notes:
-            Review the requested unit or command and add an exception only for workflows that intentionally start systemd-managed work.
-        event_type: process_exec
+            Most CI workloads do not talk to DBus. False positives appear when a workflow tests systemd/DBus features or invokes host tooling (hostnamectl, polkit, …) that talks to system services; add a tuned exception for those flows.
+        event_type: unix_socket_connect
         condition: |
-          process.exec_path.endsWith("/systemd-run")
+          path == "/run/dbus/system_bus_socket" ||
+          path == "/var/run/dbus/system_bus_socket" ||
+          (path.startsWith("/run/user/") && path.endsWith("/bus"))
         action: detect
         tags:
           mitre_tactic: defense-evasion,persistence
+
+      - rule_id: cgroup_procs_write
+        rule_name: "Tracking escape: cgroup.procs write (manual migration)"
+        description: |
+          What:
+            Terminates on a write to a cgroup.procs file under /sys/fs/cgroup, which migrates a process between cgroups.
+          Why:
+            Writing into another cgroup's cgroup.procs is the direct way to move a process out of cicd-sensor's tracked set. With sufficient privilege the destination can be outside the Job's cgroup tree, and post-migration execution is invisible to the agent.
+          Notes:
+            CI workloads do not normally touch cgroup.procs directly; containerised work goes through the runtime. Review the writing process and the target cgroup path before adding any exception.
+        event_type: file_open
+        condition: |
+          is_write &&
+          path.startsWith("/sys/fs/cgroup/") &&
+          path.endsWith("/cgroup.procs")
+        action: terminate
+        tags:
+          mitre_tactic: defense-evasion
+
+      - rule_id: proc_pid_mem_write
+        rule_name: "Tracking escape: write to /proc/<pid>/mem"
+        description: |
+          What:
+            Detects a write to /proc/<pid>/mem, the kernel interface used to inject code into a process's address space.
+          Why:
+            Writing to another process's /proc/<pid>/mem is a ptrace-equivalent injection primitive. If the target process lives outside the Job's tracked cgroup, execution moves out of the agent's view.
+          Notes:
+            /proc/self/mem self-modification by language runtimes can be a false positive; review the writing process and the target PID.
+        event_type: file_open
+        condition: |
+          is_write &&
+          path.startsWith("/proc/") &&
+          path.endsWith("/mem")
+        action: detect
+        tags:
+          mitre_tactic: defense-evasion,privilege-escalation
+
