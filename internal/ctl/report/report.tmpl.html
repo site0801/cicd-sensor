@@ -495,8 +495,10 @@ body {
 }
 
 /* hits table — high-density, single-row-per-hit with status dot */
+.htbl-wrap { overflow-x: auto; }
 .htbl {
   width: 100%;
+  table-layout: fixed;
   font-family: var(--sans);
   font-size: 13.5px;
   border-collapse: collapse;
@@ -1529,7 +1531,7 @@ body {
       tbody.append(detailRow);
     });
     table.append(tbody);
-    sec.append(table);
+    sec.append(el('div', { class: 'htbl-wrap' }, table));
     return sec;
   }
 
