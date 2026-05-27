@@ -22,7 +22,7 @@
 <div align="center">
   <table>
     <tr><td>
-      <img src="docs/assets/demo.gif" alt="cicd-sensor GitHub Actions demo" width="720">
+      <img src="docs/assets/demo.gif" alt="cicd-sensor GitHub Actions demo" width="560">
     </td></tr>
   </table>
   <sub>Example: cicd-sensor added to a GitHub Actions workflow. The resulting reports are viewable in the GitHub job summary.</sub>
