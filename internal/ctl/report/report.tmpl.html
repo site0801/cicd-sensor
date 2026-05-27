@@ -688,7 +688,7 @@ body {
 .rule-cond-inline { margin-bottom: 8px; }
 
 .htbl col.c-dot { width: 16px; }
-.htbl col.c-time { width: 80px; }
+.htbl col.c-time { width: 110px; }
 .htbl col.c-pack { width: 160px; }
 .htbl col.c-rule { width: 280px; }
 .htbl col.c-payload { width: auto; }
@@ -709,8 +709,10 @@ body {
   font-family: var(--mono);
   font-size: 12.5px;
   color: var(--ink-3);
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
+.cell-time-date { color: var(--ink-4); }
+.cell-time-time { color: var(--ink-3); }
 
 .cell-pack {
   font-family: var(--mono);
@@ -1065,6 +1067,13 @@ body {
     if (isNaN(t.getTime())) return '';
     var pad = function (n, l) { return String(n).padStart(l || 2, '0'); };
     return pad(t.getUTCHours()) + ':' + pad(t.getUTCMinutes()) + ':' + pad(t.getUTCSeconds()) + '.' + pad(t.getUTCMilliseconds(), 3);
+  }
+  function fmtDay(iso) {
+    if (!iso) return '';
+    var t = new Date(iso);
+    if (isNaN(t.getTime())) return '';
+    var pad = function (n) { return String(n).padStart(2, '0'); };
+    return t.getUTCFullYear() + '-' + pad(t.getUTCMonth() + 1) + '-' + pad(t.getUTCDate());
   }
   function fmtDate(iso) {
     if (!iso) return '';
@@ -1517,7 +1526,10 @@ body {
         }
       },
         el('td', null, el('span', { class: 'dot-status ' + (h.action || '') })),
-        el('td', { class: 'cell-time', text: fmtTs(h.timestamp) }),
+        el('td', { class: 'cell-time' },
+          el('div', { class: 'cell-time-date', text: fmtDay(h.timestamp) }),
+          el('div', { class: 'cell-time-time', text: fmtTs(h.timestamp) })
+        ),
         ruleCell,
         payloadCell,
         procCell
