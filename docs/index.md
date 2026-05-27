@@ -71,7 +71,7 @@ For self-hosted runner fleets or GitLab CI/CD, choose a deployment path from the
 ## Key Features
 
 - **eBPF-powered observability**: observes process execution, network connections, and file access at the kernel level.
-- **Continuously updated detection baseline**: fetches baseline rules for CI/CD runtime detection, with local and managed rule layers for organization-specific needs.
+- **Maintained detection baseline**: baseline rules are maintained by the project; layer your own org or project rules on top.
 - **Correlation detection**: lets baseline and custom rules combine signals, such as credential access plus suspicious execution, instead of relying only on single events.
 - **Runtime security logs**: provides Summary Logs, Detection Logs, and Runtime Event Logs for real-time detection, triage, incident response, and forensics.
 - **Runtime report and attestation**: generates a graphical report and an in-toto compatible runtime-trace attestation predicate so teams can review and verify CI/CD runtime activity.
