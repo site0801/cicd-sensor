@@ -34,8 +34,6 @@
 
 **Logs and evidence** — Per run, cicd-sensor can emit logs for review, alerting, and forensics, routed through cicd-sensor Manager to cloud sinks like S3, GCS, and Pub/Sub. The cicd-sensor-action can also produce a graphical report and a build attestation per run. Your data stays under your control — cicd-sensor never sends anything to servers operated by the cicd-sensor project.
 
-**Public and private repositories** — cicd-sensor runs entirely in your own infrastructure with no third-party SaaS, so it protects public and private repositories alike.
-
 ## Quick start
 
 On GitHub-hosted runners, add the cicd-sensor action as the first step in your workflow.
@@ -66,6 +64,8 @@ Most other runtimes have their open-source defenders — Falco, Tetragon, Tracee
 | GitLab CI/CD | Self-hosted Docker executor | Supported |
 | GitLab CI/CD | Self-hosted Kubernetes executor | Planned |
 | GitLab CI/CD | GitLab-hosted runner | Not supported (technical constraints) |
+
+Works on both public and private repositories, with no third-party SaaS dependency.
 
 Linux kernel: 5.15 or later on `amd64`, 6.1 or later on `arm64`.
 
