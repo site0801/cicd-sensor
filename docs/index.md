@@ -30,7 +30,9 @@
 
 **Detection** — Detects supply-chain attacks at runtime using process ancestry (e.g. credential access from a process descended from `npm install`) and correlation across signals (e.g. multiple credential categories read in one job). Baseline rules target patterns seen in real CI/CD attacks.
 
-**Logs and evidence** — Per run, cicd-sensor can emit logs for review, alerting, and forensics, routed through cicd-sensor Manager to cloud sinks like S3, GCS, and Pub/Sub. The cicd-sensor-action can also produce a graphical report and a build attestation per run.
+**Logs and evidence** — Per run, cicd-sensor can emit logs for review, alerting, and forensics, routed through cicd-sensor Manager to cloud sinks like S3, GCS, and Pub/Sub. The cicd-sensor-action can also produce a graphical report and a build attestation per run. Your data stays under your control — cicd-sensor never sends anything to servers operated by the cicd-sensor project.
+
+**Public and private repositories** — cicd-sensor runs entirely in your own infrastructure with no third-party SaaS, so it protects public and private repositories alike.
 
 ## Getting Started
 
