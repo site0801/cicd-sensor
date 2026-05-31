@@ -30,6 +30,8 @@
 
 ## What cicd-sensor does
 
+When a supply-chain attack runs inside a CI/CD job, teams often can't see it happen or tell what it did. cicd-sensor is an open-source sensor that lets every team do both.
+
 **Detection:** Detects supply-chain attacks at runtime using process ancestry (e.g. credential access from a process descended from `npm install`) and correlation across signals (e.g. multiple credential categories read in one job). Baseline rules target patterns seen in real CI/CD attacks, and are opt-out: turn them off if you only want the logs and evidence below.
 
 **Logs and evidence:** Per run, cicd-sensor can emit logs for review, alerting, and forensics, routed through cicd-sensor Manager to cloud sinks like S3, GCS, and Pub/Sub. The cicd-sensor-action can also produce a graphical report and a build attestation per run. Your data stays under your control. cicd-sensor never sends anything to servers operated by the cicd-sensor project.
@@ -48,30 +50,52 @@ jobs:
 
 For self-hosted GitHub Actions or GitLab CI/CD, see the [User Guide](https://cicd-sensor.github.io/user-guide/overview.html).
 
-## Rules
-
-cicd-sensor ships with a set of baseline rules. See the [Baseline Rules guide](https://cicd-sensor.github.io/user-guide/baseline-rules.html) for how they work; the rule definitions themselves live in [`rules/`](rules/). You can also write your own rules, or turn the baseline off entirely.
-
 ## Why CI/CD runtime needs this
 
 CI/CD pipelines build, release, deploy, and manage cloud infrastructure, and they hold the cloud credentials, signing keys, and registry tokens to do it. Supply-chain attackers run inside those jobs and disappear with the evidence when the job ends.
 
 Most other runtimes have their open-source defenders: Falco, Tetragon, Tracee, Wazuh, OSQuery. Open-source coverage for CI/CD runtime has lagged behind. Sigstore proved *where* and *how* artifacts were built; cicd-sensor preserves *what actually ran* so teams can detect, respond, and audit.
 
+## Feature comparison
+
+| Capability | cicd-sensor | Harden-Runner (Free) | Comment |
+| --- | --- | --- | --- |
+| **Licensing & deployment** | | | |
+| Open source | ✅ Yes | ✅ Yes | |
+| No SaaS required | ✅ Yes | ❌ No | |
+| **Platform coverage** | | | |
+| Private repos | ✅ Yes | ❌ No | |
+| Self-hosted runners | ✅ Yes | ❌ No | |
+| GitHub Actions support | ✅ Yes | ✅ Yes | |
+| GitLab CI/CD support | ✅ Yes | ❌ No | |
+| **Capabilities** | | | |
+| Detection rules | ✅ Yes | ✅ Yes | |
+| Flexible custom rules | ✅ Yes | 🔶 Limited | cicd-sensor rules cover process ancestry, file access, and correlation across signals; Harden-Runner is mainly a network egress allowlist. |
+| Network blocking | 🔶 Partial | ✅ Yes | cicd-sensor kills the process and stops the job on detection instead of filtering traffic like a firewall. |
+| Log export | ✅ Yes | ❌ No | |
+
+<sub>This table compares the free version of Harden-Runner. StepSecurity's paid platform adds more, such as private repository and self-hosted runner support, dashboards, and policy management.</sub>
+
+<sub>Based on public information as of May 2026. Corrections welcome.</sub>
+
 ## Supported CI/CD pipelines
 
 | Platform | Environment | Status |
 | --- | --- | --- |
-| GitHub Actions | GitHub-hosted runner | Supported |
-| GitHub Actions | Self-hosted Machine Runner | Supported |
-| GitHub Actions | Actions Runner Controller on Kubernetes | Planned |
-| GitLab CI/CD | Self-hosted Docker executor | Supported |
-| GitLab CI/CD | Self-hosted Kubernetes executor | Planned |
-| GitLab CI/CD | GitLab-hosted runner | Not supported (technical constraints) |
+| GitHub Actions | GitHub-hosted runner | ✅ Supported |
+| GitHub Actions | Self-hosted Machine Runner | ✅ Supported |
+| GitHub Actions | Actions Runner Controller on Kubernetes | 🚧 Planned |
+| GitLab CI/CD | Self-hosted Docker executor | ✅ Supported |
+| GitLab CI/CD | Self-hosted Kubernetes executor | 🚧 Planned |
+| GitLab CI/CD | GitLab-hosted runner | ❌ Not supported (technical constraints) |
 
 Works on both public and private repositories, with no third-party SaaS dependency.
 
 Linux kernel: 5.15 or later on `amd64`, 6.1 or later on `arm64`.
+
+## Rules
+
+cicd-sensor ships with a set of baseline rules. See the [Baseline Rules guide](https://cicd-sensor.github.io/user-guide/baseline-rules.html) for how they work; the rule definitions themselves live in [`rules/`](rules/). You can also write your own rules, or turn the baseline off entirely.
 
 ## Documentation
 
