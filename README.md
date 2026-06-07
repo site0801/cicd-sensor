@@ -62,7 +62,7 @@ Most other runtimes have their open-source defenders: Falco, Tetragon, Tracee, W
 | --- | --- | --- | --- |
 | **Licensing & deployment** | | | |
 | Open source | ✅ Yes | ✅ Yes | |
-| No SaaS required | ✅ Yes | ❌ No | |
+| Data privacy | ✅ Self-hosted | SaaS backend | cicd-sensor runs entirely in your infrastructure, so logs and events stay in your environment. |
 | **Platform coverage** | | | |
 | Private repos | ✅ Yes | ❌ No | |
 | Self-hosted runners | ✅ Yes | ❌ No | Enforcing self-hosted runners enables organization-wide log collection across every job. |
