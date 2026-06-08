@@ -1,0 +1,109 @@
+# cicd-sensor Agent DaemonSet for Actions Runner Controller (ARC).
+#
+# One Agent pod runs on every worker node and observes runner pods scheduled
+# to that node. The Agent connects to cicd-sensor-manager for host scope
+# configuration (rules, output destinations) and reads ARC scale-set labels
+# from runner pods to route each job to the matching per-scale-set host
+# scope configuration.
+#
+# Before applying, replace:
+#   <image>              the cicd-sensor agent image and tag
+#   <manager-url>        URL of the reachable cicd-sensor-manager
+#   <manager-secret>     name of a Kubernetes Secret containing the manager
+#                        bearer token under the key `token`
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cicd-sensor-agent
+  namespace: cicd-sensor
+  labels:
+    app: cicd-sensor-agent
+spec:
+  selector:
+    matchLabels:
+      app: cicd-sensor-agent
+  template:
+    metadata:
+      labels:
+        app: cicd-sensor-agent
+    spec:
+      serviceAccountName: cicd-sensor-agent
+      hostPID: true
+      # The Agent must run on Linux nodes with cgroup v2.
+      nodeSelector:
+        kubernetes.io/os: linux
+      tolerations:
+        - operator: Exists
+      initContainers:
+        # install-cli copies the Agent CLI binary onto the node hostPath so
+        # runner pods can mount and call it. Using the same image as the main
+        # container guarantees the CLI version on disk matches the Agent
+        # version in memory; the atomic install+mv keeps in-flight runner
+        # pods from observing a partially-written binary during rollouts.
+        - name: install-cli
+          image: <image>
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              install -m 0755 /usr/local/bin/cicd-sensor /host-cli/cicd-sensor.new
+              mv /host-cli/cicd-sensor.new /host-cli/cicd-sensor
+          volumeMounts:
+            - name: cli
+              mountPath: /host-cli
+      containers:
+        - name: agent
+          image: <image>
+          imagePullPolicy: IfNotPresent
+          args:
+            - agent
+            - start
+            - --provider=github-arc
+            - --runner=kubernetes
+            - --socket=/var/run/cicd-sensor/control.sock
+            - --manager-url=<manager-url>
+            # Comma-separated namespaces hosting AutoscalingRunnerSet
+            # resources whose runner pods this Agent should classify by
+            # scale-set identity. Match the namespaces granted to the
+            # ServiceAccount in rbac.yaml.
+            - --arc-namespaces=<arc-namespace>[,<another-arc-namespace>...]
+          env:
+            - name: CICD_SENSOR_MANAGER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: <manager-secret>
+                  key: token
+          securityContext:
+            # eBPF, hostPID, and cgroupfs access. Operators that prefer
+            # capability-based scoping can replace privileged:true with:
+            #   capabilities:
+            #     add: [BPF, SYS_ADMIN, PERFMON, NET_ADMIN]
+            # Test on the target kernel before relying on the capability form.
+            privileged: true
+          volumeMounts:
+            - name: cgroupfs
+              mountPath: /sys/fs/cgroup
+            - name: bpffs
+              mountPath: /sys/fs/bpf
+              mountPropagation: Bidirectional
+            - name: control
+              mountPath: /var/run/cicd-sensor
+      volumes:
+        - name: cgroupfs
+          hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+        - name: bpffs
+          hostPath:
+            path: /sys/fs/bpf
+            type: DirectoryOrCreate
+        - name: control
+          hostPath:
+            path: /var/run/cicd-sensor
+            type: DirectoryOrCreate
+        - name: cli
+          hostPath:
+            path: /opt/cicd-sensor
+            type: DirectoryOrCreate

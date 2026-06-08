@@ -118,8 +118,9 @@ For implementation ownership boundaries, see [Agent Ownership Boundaries](agent-
 | --- | --- | --- | --- |
 | GitHub Actions | GitHub-hosted runner | `/v1/github/project/start` | cgroup of the project start peer PID |
 | GitHub Actions | Self-hosted Machine Runner | `/v1/github/host/start` | cgroup of the hook peer PID |
+| GitHub Actions | ARC `gha-runner-scale-set` | `/v1/github-arc/host/start` | cgroup of the hook peer PID, resolved on the node through `hostPID` to a `kubepods.slice` descendant |
 | GitLab CI/CD | Self-hosted Docker executor | `/v1/gitlab/staging/put` -> lazy `/v1/gitlab/host/start` | Docker label evidence and staging promote |
-| GitHub ARC / GitLab Kubernetes executor | Planned | TBD | NRI / Pod metadata and similar options are under consideration |
+| GitLab CI/CD | Self-hosted Kubernetes executor | Planned | TBD; will reuse the sibling-pod tracking primitive introduced for ARC `containerMode: kubernetes` |
 
 The agent process selects one provider at startup.
 The Listener mounts either `/v1/github/*` or `/v1/gitlab/*`, not both.
@@ -137,6 +138,7 @@ The control socket is mode `0o777`; request identification uses `SO_PEERCRED`:
 | Agent-owner UID | GitLab `host/start`, GitHub / GitLab `staging/put` | peer UID matches the agent process owner |
 | Peer in tracked Job | GitHub `host/end`, `project/result`, `job/health` | peer PID's cgroup is in an already-tracked Job |
 | Seed | GitHub `host/start` | peer's cgroup becomes the new Job's tracked root |
+| Peer in `kubepods.slice` | GitHub ARC `host/start` | peer's cgroup is a descendant of a `kubepods.slice` pod cgroup. ARC runs the actions/runner process as the runner image's user (typically not the Agent owner), so the agent-owner UID check is replaced by this anchor. The pod cgroup is created by the kubelet and cannot be forged from inside the pod. |
 
 GitHub `project/start` is the mixed case: on a self-hosted runner the peer must already belong to the host Job (it attaches project scope); on a hosted runner no prior Job exists, so the peer's cgroup seeds a new project-only Job. Co-resident untrusted local users are out of scope.
 

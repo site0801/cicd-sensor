@@ -1,0 +1,59 @@
+# gha-runner-scale-set Helm values overlay for cicd-sensor.
+#
+# Apply this on top of your own values for the gha-runner-scale-set release.
+# Example:
+#   helm upgrade --install <release> \
+#     oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set \
+#     -n <arc-namespace> \
+#     -f my-values.yaml \
+#     -f values-overlay.yaml
+#
+# The overlay carries plumbing only:
+#   - volumes that mount the Agent control socket, CLI binary, and hook scripts
+#   - volumeMounts on the runner container
+#   - env vars that point the actions/runner at the hook scripts
+#
+# Rules, output destinations, and detection toggles are delivered through
+# cicd-sensor-manager and do not require a Helm upgrade. Editing this overlay
+# triggers ARC to recreate the EphemeralRunnerSet and interrupts in-flight
+# jobs; route operational changes through the manager instead.
+#
+# Phase 1 supports containerMode: dind only. containerMode: kubernetes is on
+# the roadmap.
+containerMode:
+  type: dind
+
+template:
+  spec:
+    containers:
+      - name: runner
+        # The actions/runner image already honors these env vars; the hook
+        # scripts mounted from the ConfigMap shell out to the Agent CLI.
+        env:
+          - name: ACTIONS_RUNNER_HOOK_JOB_STARTED
+            value: /opt/cicd-sensor/hooks/host-start.sh
+          - name: ACTIONS_RUNNER_HOOK_JOB_COMPLETED
+            value: /opt/cicd-sensor/hooks/host-end.sh
+        volumeMounts:
+          - name: cicd-sensor-control
+            mountPath: /var/run/cicd-sensor
+          - name: cicd-sensor-cli
+            mountPath: /opt/cicd-sensor/cicd-sensor
+            subPath: cicd-sensor
+            readOnly: true
+          - name: cicd-sensor-hooks
+            mountPath: /opt/cicd-sensor/hooks
+            readOnly: true
+    volumes:
+      - name: cicd-sensor-control
+        hostPath:
+          path: /var/run/cicd-sensor
+          type: Directory
+      - name: cicd-sensor-cli
+        hostPath:
+          path: /opt/cicd-sensor
+          type: Directory
+      - name: cicd-sensor-hooks
+        configMap:
+          name: cicd-sensor-hooks
+          defaultMode: 0o755

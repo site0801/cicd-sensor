@@ -1,0 +1,40 @@
+# RBAC for the cicd-sensor Agent DaemonSet.
+#
+# The Agent reads scale-set labels from runner pods to route each job to the
+# matching host scope. The Role grants the minimum permissions required:
+# only `get` and `list` on pods, only in ARC namespaces.
+#
+# Replace ARC_NAMESPACE below with the namespace where your gha-runner-scale-set
+# releases are installed. Repeat the Role + RoleBinding pair for each ARC
+# namespace, or use a single ClusterRole + ClusterRoleBinding if the Agent
+# should be able to read pods cluster-wide (less tight, simpler to manage).
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cicd-sensor-agent
+  namespace: cicd-sensor
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cicd-sensor-agent-pod-reader
+  namespace: ARC_NAMESPACE
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cicd-sensor-agent-pod-reader
+  namespace: ARC_NAMESPACE
+subjects:
+  - kind: ServiceAccount
+    name: cicd-sensor-agent
+    namespace: cicd-sensor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cicd-sensor-agent-pod-reader

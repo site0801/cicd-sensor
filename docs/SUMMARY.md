@@ -8,6 +8,7 @@
 - [GitHub-hosted runner](user-guide/github-hosted.md)
 - [Self-hosted Machine install](user-guide/self-hosted-install.md)
 - [GitHub Actions self-hosted](user-guide/github-self-hosted.md)
+- [GitHub Actions Runner Controller (ARC)](user-guide/github-arc.md)
 - [GitLab CI/CD self-hosted](user-guide/gitlab-ci.md)
 - [Manager](user-guide/manager.md)
 - [Rules](user-guide/rules.md)

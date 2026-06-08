@@ -1,0 +1,23 @@
+# Job hook scripts for runner pods scheduled by ARC.
+#
+# Apply this ConfigMap in every namespace that hosts an AutoscalingRunnerSet,
+# then reference it from the values overlay applied to each gha-runner-scale-set
+# Helm release.
+#
+# The scripts shell out to the Agent CLI mounted from the node hostPath. They
+# rely on the GITHUB_* and RUNNER_TRACKING_ID environment variables that the
+# actions/runner sets inside the runner pod before invoking the hook.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cicd-sensor-hooks
+data:
+  host-start.sh: |
+    #!/usr/bin/env sh
+    set -eu
+    exec /opt/cicd-sensor/cicd-sensor host start
+  host-end.sh: |
+    #!/usr/bin/env sh
+    set -eu
+    exec /opt/cicd-sensor/cicd-sensor host end

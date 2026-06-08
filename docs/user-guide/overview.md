@@ -10,6 +10,7 @@ The first decision is the runner environment you want to protect.
 | --- | --- | --- |
 | GitHub-hosted runner | [GitHub-hosted runner](github-hosted.md) | Graphical report and runtime-trace attestation predicate. Log delivery is also available when using the manager. |
 | GitHub Actions self-hosted | [Self-hosted Machine install](self-hosted-install.md), [GitHub Actions self-hosted](github-self-hosted.md), [Manager](manager.md) | Summary Log, Detection Log, Runtime Event Log, and graphical report |
+| GitHub Actions on ARC | [GitHub Actions Runner Controller (ARC)](github-arc.md), [Manager](manager.md) | Summary Log, Detection Log, and Runtime Event Log, per scale set |
 | GitLab CI/CD self-hosted | [Self-hosted Machine install](self-hosted-install.md), [GitLab CI/CD self-hosted](gitlab-ci.md), [Manager](manager.md) | Summary Log, Detection Log, and Runtime Event Log |
 | Rule author / SIRT | [Rules](rules.md) | Detection, collection, and correlation rules for CI/CD runtime events |
 | Log consumer / SIEM integration | [Logging](logging.md) | Log format delivered by the manager |
@@ -65,7 +66,8 @@ In self-hosted deployments, config and rules come from the manager, not from the
 | --- | --- | --- |
 | GitHub Actions | GitHub-hosted runner | Supported target |
 | GitHub Actions | Self-hosted Machine Runner | Supported target |
-| GitHub Actions | Actions Runner Controller on Kubernetes | Planned |
+| GitHub Actions | Actions Runner Controller on Kubernetes (`gha-runner-scale-set`, `containerMode: dind`) | Supported target |
+| GitHub Actions | Actions Runner Controller on Kubernetes (`containerMode: kubernetes`) | Planned |
 | GitLab CI/CD | Self-hosted Docker executor | Supported target |
 | GitLab CI/CD | Self-hosted Kubernetes executor | Planned |
 | GitLab CI/CD | Self-hosted Shell executor | Not planned |
