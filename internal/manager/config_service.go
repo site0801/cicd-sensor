@@ -33,13 +33,25 @@ func (h *configServiceHandler) FetchConfig(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("invalid job identity: %w", err))
 	}
 
-	config := h.server.config
+	// Per-scale-set routing: when the request carries an arc_scale_set
+	// that matches a configured override, swap in the override's config
+	// and rules cache before continuing. Non-ARC requests and ARC
+	// requests for unconfigured scale sets fall through to the global
+	// defaults.
+	config, localRules, scaleSetMatched := h.server.resolveARCScaleSetEntry(req.Msg.ArcScaleSet)
 	if config == nil {
 		h.server.logger.ErrorContext(ctx, "config_load_failed", "error", "startup config was not loaded")
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("config load failed"))
 	}
+	if scaleSet := req.Msg.ArcScaleSet; scaleSet != nil {
+		h.server.logger.InfoContext(ctx, "arc_scale_set_config_resolved",
+			"scale_set_namespace", scaleSet.Namespace,
+			"scale_set_name", scaleSet.Name,
+			"matched_override", scaleSetMatched,
+		)
+	}
 
-	sources, err := h.server.localRules.Load(ctx)
+	sources, err := localRules.Load(ctx)
 	if err != nil {
 		h.server.logger.ErrorContext(ctx, "manager_rules_load_failed", "error", err)
 		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("manager rules load failed: %w", err))

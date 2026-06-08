@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	managerv1beta1 "github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1beta1"
 	"github.com/cicd-sensor/cicd-sensor/internal/proto/cicd_sensor/manager/v1beta1/managerv1beta1connect"
 	"github.com/cicd-sensor/cicd-sensor/internal/rule/baseline"
 )
@@ -23,8 +24,22 @@ type Server struct {
 	startup       *StartupConfig
 	httpServer    *http.Server
 
+	// arcScaleSetEntries holds resolved per-scale-set overrides, keyed by
+	// (namespace, name). FetchConfig consults this map first and falls
+	// back to config / localRules when no entry matches.
+	arcScaleSetEntries map[ARCScaleSetKey]*arcScaleSetEntry
+
 	outputRouter *OutputRouter
 	now          func() time.Time
+}
+
+// arcScaleSetEntry is one per-scale-set override resolved against the
+// global ServedConfig at startup. localRules is nil when the entry does
+// not declare its own rules_file; in that case the server's default
+// localRules cache is reused.
+type arcScaleSetEntry struct {
+	config     *ServedConfig
+	localRules *RuleSourceCache
 }
 
 // NewServer creates a manager server mounted on addr. Baseline and local rule
@@ -35,14 +50,15 @@ func NewServer(logger *slog.Logger, addr string, tokens []string, config *Served
 
 func newServer(logger *slog.Logger, addr string, tokens []string, config *ServedConfig, baselineRules BaselineRuleSource, localRules *RuleSourceCache, startup *StartupConfig, router *OutputRouter) *Server {
 	s := &Server{
-		logger:        logger.With("component", "manager"),
-		tokens:        NewTokenStore(tokens),
-		config:        config,
-		baselineRules: baselineRules,
-		localRules:    localRules,
-		startup:       startup,
-		outputRouter:  router,
-		now:           time.Now,
+		logger:             logger.With("component", "manager"),
+		tokens:             NewTokenStore(tokens),
+		config:             config,
+		baselineRules:      baselineRules,
+		localRules:         localRules,
+		startup:            startup,
+		arcScaleSetEntries: buildARCScaleSetEntries(config, startup),
+		outputRouter:       router,
+		now:                time.Now,
 	}
 
 	mux := http.NewServeMux()
@@ -127,4 +143,70 @@ func (s *Server) Close() error {
 		return nil
 	}
 	return s.outputRouter.Close()
+}
+
+// buildARCScaleSetEntries materializes the per-scale-set overrides
+// declared in startup.ARCScaleSets against the global ServedConfig. The
+// returned map is keyed by (namespace, name) for O(1) lookup from
+// FetchConfig. nil startup or empty overrides return nil so the lookup
+// site can detect "no per-scale-set entries configured" cheaply.
+func buildARCScaleSetEntries(global *ServedConfig, startup *StartupConfig) map[ARCScaleSetKey]*arcScaleSetEntry {
+	if startup == nil || len(startup.ARCScaleSets) == 0 {
+		return nil
+	}
+	out := make(map[ARCScaleSetKey]*arcScaleSetEntry, len(startup.ARCScaleSets))
+	for _, override := range startup.ARCScaleSets {
+		key := ARCScaleSetKey{Namespace: override.Namespace, Name: override.Name}
+		entry := &arcScaleSetEntry{
+			config: applyARCScaleSetOverride(global, override),
+		}
+		if override.RulesFile != "" {
+			entry.localRules = NewRuleSourceCache(override.RulesFile)
+		}
+		out[key] = entry
+	}
+	return out
+}
+
+// resolveARCScaleSetEntry returns the ServedConfig and RuleSourceCache
+// to serve for a FetchConfig request. When scaleSet matches a configured
+// per-scale-set override, the override's resolved config and (if
+// declared) rules cache are returned. Otherwise the server's global
+// defaults are returned. The third return value is true when a match
+// was made; callers use it for diagnostic logging.
+func (s *Server) resolveARCScaleSetEntry(scaleSet *managerv1beta1.ARCScaleSet) (*ServedConfig, *RuleSourceCache, bool) {
+	if scaleSet == nil || s.arcScaleSetEntries == nil {
+		return s.config, s.localRules, false
+	}
+	key := ARCScaleSetKey{Namespace: scaleSet.Namespace, Name: scaleSet.Name}
+	entry, ok := s.arcScaleSetEntries[key]
+	if !ok {
+		return s.config, s.localRules, false
+	}
+	rules := entry.localRules
+	if rules == nil {
+		rules = s.localRules
+	}
+	return entry.config, rules, true
+}
+
+// applyARCScaleSetOverride returns a new ServedConfig with the override's
+// non-nil fields applied on top of the global config. The returned
+// pointer is independent of the global so concurrent FetchConfig calls
+// for different scale sets cannot observe a partially-mutated value.
+func applyARCScaleSetOverride(global *ServedConfig, override ARCScaleSetConfig) *ServedConfig {
+	var out ServedConfig
+	if global != nil {
+		out = *global
+	}
+	if override.DefaultMaxAlertsPerRule != nil {
+		out.DefaultMaxAlertsPerRule = *override.DefaultMaxAlertsPerRule
+	}
+	if override.DisableBaselineRules != nil {
+		out.DisableBaselineRules = *override.DisableBaselineRules
+	}
+	if override.MonitorMode != nil {
+		out.MonitorMode = *override.MonitorMode
+	}
+	return &out
 }

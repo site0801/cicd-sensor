@@ -544,6 +544,158 @@ func assertRuleSetIDAt(t *testing.T, sources []*managerv1beta1.RuleSource, index
 	}
 }
 
+func TestConfigService_FetchConfig_PerScaleSet(t *testing.T) {
+	validIdentity := &managerv1beta1.JobIdentity{
+		Provider:               "github",
+		ProviderHost:           "github.com",
+		ProjectPath:            "acme/example",
+		GithubRunId:            "123",
+		GithubJob:              "build",
+		GithubRunAttempt:       "1",
+		GithubRunnerTrackingId: "runner-1",
+	}
+
+	dir := t.TempDir()
+	globalRulesPath := writeManagerRuleBundle(t, dir, map[string]string{
+		"global.yaml": `
+rule_sets:
+  - ruleset_id: "global-set"
+    rules:
+      - rule_id: "global_detect"
+        event_type: "process_exec"
+        condition: 'process_name == "bash"'
+        action: "detect"
+`,
+	})
+	prodDir := t.TempDir()
+	prodRulesPath := writeManagerRuleBundle(t, prodDir, map[string]string{
+		"prod.yaml": `
+rule_sets:
+  - ruleset_id: "prod-set"
+    rules:
+      - rule_id: "prod_detect"
+        event_type: "process_exec"
+        condition: 'process_name == "curl"'
+        action: "terminate"
+`,
+	})
+
+	mptr := func(b bool) *bool { return &b }
+	iptr := func(i int) *int { return &i }
+	startup := &StartupConfig{
+		Revision:                "rev-global",
+		DefaultMaxAlertsPerRule: 5,
+		MonitorMode:             false,
+		ARCScaleSets: []ARCScaleSetConfig{
+			{
+				Namespace:               "arc-prod",
+				Name:                    "prod-deploy",
+				DefaultMaxAlertsPerRule: iptr(20),
+				RulesFile:               prodRulesPath,
+			},
+			{
+				Namespace:   "arc-ci",
+				Name:        "ci-tests",
+				MonitorMode: mptr(true),
+				// No RulesFile → inherits global.
+			},
+		},
+	}
+	global := &ServedConfig{
+		ConfigRevision:          "rev-global",
+		DefaultMaxAlertsPerRule: 5,
+		MonitorMode:             false,
+	}
+
+	server := NewServer(testLogger, ":0", testManagerTokens, global, globalRulesPath, startup, nil)
+	server.baselineRules = &fakeBaselineRuleSource{} // empty baseline
+	ts := newManagerHTTPTestServer(t, server.httpServer.Handler)
+	defer ts.Close()
+	client := managerv1beta1connect.NewConfigServiceClient(ts.Client(), ts.URL)
+
+	call := func(t *testing.T, scaleSet *managerv1beta1.ARCScaleSet) *managerv1beta1.FetchConfigResponse {
+		t.Helper()
+		req := connect.NewRequest(&managerv1beta1.FetchConfigRequest{
+			JobIdentity:  validIdentity,
+			ArcScaleSet:  scaleSet,
+		})
+		req.Header().Set("Authorization", managerBearer(testManagerSecret))
+		resp, err := client.FetchConfig(context.Background(), req)
+		if err != nil {
+			t.Fatalf("FetchConfig: %v", err)
+		}
+		return resp.Msg
+	}
+
+	t.Run("no arc_scale_set falls back to global", func(t *testing.T) {
+		resp := call(t, nil)
+		if got := resp.GetConfig().GetDefaultMaxAlertsPerRule(); got != 5 {
+			t.Fatalf("default_max_alerts_per_rule: got %d, want 5 (global)", got)
+		}
+		if resp.GetConfig().GetMonitorMode() {
+			t.Fatal("monitor_mode: got true, want false (global)")
+		}
+		// Last rule source should be the global set.
+		sources := protoconv.FromProtoRuleSources(resp.GetRuleSources())
+		var lastSetID string
+		for _, src := range sources {
+			for _, set := range src.RuleSets {
+				lastSetID = set.RulesetID
+			}
+		}
+		if lastSetID != "global-set" {
+			t.Fatalf("rule set id: got %q, want global-set", lastSetID)
+		}
+	})
+
+	t.Run("matched scale-set with rules_file uses override config and rules", func(t *testing.T) {
+		resp := call(t, &managerv1beta1.ARCScaleSet{Namespace: "arc-prod", Name: "prod-deploy"})
+		if got := resp.GetConfig().GetDefaultMaxAlertsPerRule(); got != 20 {
+			t.Fatalf("default_max_alerts_per_rule: got %d, want 20 (override)", got)
+		}
+		if resp.GetConfig().GetMonitorMode() {
+			t.Fatal("monitor_mode: got true, want false (no override)")
+		}
+		sources := protoconv.FromProtoRuleSources(resp.GetRuleSources())
+		var lastSetID string
+		for _, src := range sources {
+			for _, set := range src.RuleSets {
+				lastSetID = set.RulesetID
+			}
+		}
+		if lastSetID != "prod-set" {
+			t.Fatalf("rule set id: got %q, want prod-set (override rules_file)", lastSetID)
+		}
+	})
+
+	t.Run("matched scale-set without rules_file inherits global rules", func(t *testing.T) {
+		resp := call(t, &managerv1beta1.ARCScaleSet{Namespace: "arc-ci", Name: "ci-tests"})
+		if got := resp.GetConfig().GetDefaultMaxAlertsPerRule(); got != 5 {
+			t.Fatalf("default_max_alerts_per_rule: got %d, want 5 (no override)", got)
+		}
+		if !resp.GetConfig().GetMonitorMode() {
+			t.Fatal("monitor_mode: got false, want true (override)")
+		}
+		sources := protoconv.FromProtoRuleSources(resp.GetRuleSources())
+		var lastSetID string
+		for _, src := range sources {
+			for _, set := range src.RuleSets {
+				lastSetID = set.RulesetID
+			}
+		}
+		if lastSetID != "global-set" {
+			t.Fatalf("rule set id: got %q, want global-set (inherit)", lastSetID)
+		}
+	})
+
+	t.Run("unmatched scale-set falls back to global", func(t *testing.T) {
+		resp := call(t, &managerv1beta1.ARCScaleSet{Namespace: "arc-unknown", Name: "noop"})
+		if got := resp.GetConfig().GetDefaultMaxAlertsPerRule(); got != 5 {
+			t.Fatalf("default_max_alerts_per_rule: got %d, want 5 (fallback)", got)
+		}
+	})
+}
+
 func assertSummaryOutputSettings(t *testing.T, got *managerv1beta1.OutputSettings) {
 	t.Helper()
 	if got == nil {

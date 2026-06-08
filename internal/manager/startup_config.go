@@ -33,6 +33,32 @@ type StartupConfig struct {
 	MonitorMode             bool              `yaml:"monitor_mode,omitempty"`
 	Sinks                   SinksConfig       `yaml:"sinks,omitempty"`
 	Logs                    LogsConfig        `yaml:"logs,omitempty"`
+	// ARCScaleSets is an optional list of per-scale-set overrides. When a
+	// FetchConfig request carries an arc_scale_set that matches one of
+	// these entries by (namespace, name), the manager serves the entry's
+	// resolved configuration; otherwise it falls back to the global
+	// defaults above. Entries with no overrides are equivalent to the
+	// global defaults and do not need to be listed.
+	ARCScaleSets []ARCScaleSetConfig `yaml:"arc_scale_sets,omitempty"`
+}
+
+// ARCScaleSetConfig is a per-scale-set override of the manager's served
+// configuration. Unset pointer fields inherit from the global StartupConfig
+// values; this lets an entry declare "same as global except for these
+// specific fields" without restating the entire configuration.
+type ARCScaleSetConfig struct {
+	Namespace string `yaml:"namespace"`
+	Name      string `yaml:"name"`
+
+	// DefaultMaxAlertsPerRule overrides the global default when non-nil.
+	DefaultMaxAlertsPerRule *int `yaml:"default_max_alerts_per_rule,omitempty"`
+	// DisableBaselineRules overrides the global value when non-nil.
+	DisableBaselineRules *bool `yaml:"disable_baseline_rules,omitempty"`
+	// MonitorMode overrides the global value when non-nil.
+	MonitorMode *bool `yaml:"monitor_mode,omitempty"`
+	// RulesFile overrides the global --rules-file path for jobs in this
+	// scale set. Empty means inherit the global path.
+	RulesFile string `yaml:"rules_file,omitempty"`
 }
 
 // SinksConfig maps an operator-defined sink name to its physical destination.
@@ -88,9 +114,46 @@ func LoadStartupConfig(path string) (StartupConfig, error) {
 	if err := validateLogs(cfg.Logs, cfg.Sinks); err != nil {
 		return StartupConfig{}, err
 	}
+	if err := validateARCScaleSets(cfg.ARCScaleSets); err != nil {
+		return StartupConfig{}, err
+	}
 	sum := sha256.Sum256(data)
 	cfg.Revision = "sha256:" + hex.EncodeToString(sum[:])
 	return cfg, nil
+}
+
+func validateARCScaleSets(entries []ARCScaleSetConfig) error {
+	seen := make(map[ARCScaleSetKey]struct{}, len(entries))
+	for i, entry := range entries {
+		if strings.TrimSpace(entry.Namespace) == "" {
+			return fmt.Errorf("arc_scale_sets[%d].namespace must not be empty", i)
+		}
+		if strings.TrimSpace(entry.Name) == "" {
+			return fmt.Errorf("arc_scale_sets[%d].name must not be empty", i)
+		}
+		key := ARCScaleSetKey{Namespace: entry.Namespace, Name: entry.Name}
+		if _, dup := seen[key]; dup {
+			return fmt.Errorf("arc_scale_sets[%d]: duplicate selector (namespace=%q, name=%q)", i, entry.Namespace, entry.Name)
+		}
+		seen[key] = struct{}{}
+		if entry.DefaultMaxAlertsPerRule != nil {
+			if err := rule.ValidateMaxAlertsBound(
+				*entry.DefaultMaxAlertsPerRule,
+				fmt.Sprintf("arc_scale_sets[%d].default_max_alerts_per_rule", i),
+			); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// ARCScaleSetKey identifies one ARC scale-set entry inside StartupConfig.
+// It mirrors the proto ARCScaleSet on the wire and is the map key for
+// per-scale-set entries inside the Server.
+type ARCScaleSetKey struct {
+	Namespace string
+	Name      string
 }
 
 // BindAddress returns the net/http listen address represented by bind config.

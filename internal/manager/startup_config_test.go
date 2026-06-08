@@ -424,3 +424,144 @@ func loadStartupConfigFromString(t *testing.T, content string) (StartupConfig, e
 	}
 	return LoadStartupConfig(path)
 }
+
+func TestLoadStartupConfig_ARCScaleSets(t *testing.T) {
+	tests := []struct {
+		name      string
+		body      string
+		wantErr   string
+		assertCfg func(*testing.T, StartupConfig)
+	}{
+		{
+			name: "single override is loaded with pointer field semantics",
+			body: `
+arc_scale_sets:
+  - namespace: arc-prod
+    name: prod-deploy
+    default_max_alerts_per_rule: 10
+    monitor_mode: true
+    rules_file: /etc/cicd-sensor/rules/prod.yaml
+`,
+			assertCfg: func(t *testing.T, cfg StartupConfig) {
+				if got := len(cfg.ARCScaleSets); got != 1 {
+					t.Fatalf("arc_scale_sets: got %d entries, want 1", got)
+				}
+				e := cfg.ARCScaleSets[0]
+				if e.Namespace != "arc-prod" || e.Name != "prod-deploy" {
+					t.Fatalf("selector: got (%q, %q)", e.Namespace, e.Name)
+				}
+				if e.DefaultMaxAlertsPerRule == nil || *e.DefaultMaxAlertsPerRule != 10 {
+					t.Fatalf("default_max_alerts_per_rule: got %v, want pointer to 10", e.DefaultMaxAlertsPerRule)
+				}
+				if e.MonitorMode == nil || *e.MonitorMode != true {
+					t.Fatalf("monitor_mode: got %v, want pointer to true", e.MonitorMode)
+				}
+				if e.DisableBaselineRules != nil {
+					t.Fatalf("disable_baseline_rules: got %v, want nil (inherit)", e.DisableBaselineRules)
+				}
+				if e.RulesFile != "/etc/cicd-sensor/rules/prod.yaml" {
+					t.Fatalf("rules_file: got %q", e.RulesFile)
+				}
+			},
+		},
+		{
+			name: "monitor_mode false override is distinguishable from absent",
+			body: `
+arc_scale_sets:
+  - namespace: arc-prod
+    name: prod-deploy
+    monitor_mode: false
+`,
+			assertCfg: func(t *testing.T, cfg StartupConfig) {
+				e := cfg.ARCScaleSets[0]
+				if e.MonitorMode == nil || *e.MonitorMode != false {
+					t.Fatalf("monitor_mode: got %v, want pointer to false", e.MonitorMode)
+				}
+			},
+		},
+		{
+			name: "empty namespace is rejected",
+			body: `
+arc_scale_sets:
+  - namespace: ""
+    name: prod-deploy
+`,
+			wantErr: "namespace must not be empty",
+		},
+		{
+			name: "empty name is rejected",
+			body: `
+arc_scale_sets:
+  - namespace: arc-prod
+    name: ""
+`,
+			wantErr: "name must not be empty",
+		},
+		{
+			name: "duplicate selector is rejected",
+			body: `
+arc_scale_sets:
+  - namespace: arc-prod
+    name: prod-deploy
+  - namespace: arc-prod
+    name: prod-deploy
+`,
+			wantErr: "duplicate selector",
+		},
+		{
+			name: "override default_max_alerts_per_rule above ceiling is rejected",
+			body: `
+arc_scale_sets:
+  - namespace: arc-prod
+    name: prod-deploy
+    default_max_alerts_per_rule: 101
+`,
+			wantErr: "must be <= 100",
+		},
+		{
+			name: "different namespace + same name is two distinct entries",
+			body: `
+arc_scale_sets:
+  - namespace: arc-prod
+    name: deploy
+  - namespace: arc-ci
+    name: deploy
+`,
+			assertCfg: func(t *testing.T, cfg StartupConfig) {
+				if got := len(cfg.ARCScaleSets); got != 2 {
+					t.Fatalf("arc_scale_sets: got %d entries, want 2", got)
+				}
+			},
+		},
+		{
+			name:    "no arc_scale_sets is valid (backward compatible)",
+			body:    "",
+			assertCfg: func(t *testing.T, cfg StartupConfig) {
+				if cfg.ARCScaleSets != nil {
+					t.Fatalf("arc_scale_sets: got %v, want nil", cfg.ARCScaleSets)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg, err := loadStartupConfigFromString(t, "bind:\n  address: 127.0.0.1\n  port: 7443\n"+tt.body)
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("error: got %q, want substring %q", err.Error(), tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("load startup config: %v", err)
+			}
+			if tt.assertCfg != nil {
+				tt.assertCfg(t, cfg)
+			}
+		})
+	}
+}
