@@ -38,14 +38,15 @@ const (
 
 // Listener serves the control socket API over a unix domain socket.
 type Listener struct {
-	logger            *slog.Logger
-	jobRegistry       *jobregistry.JobRegistry
-	socketPath        string
-	hostManagerConn   managerclient.Connection
-	hostManagerClient jobregistry.ManagerConfigFetcher
-	runnerType        string
-	provider          jobcontext.Provider
-	server            *http.Server
+	logger              *slog.Logger
+	jobRegistry         *jobregistry.JobRegistry
+	socketPath          string
+	hostManagerConn     managerclient.Connection
+	hostManagerClient   jobregistry.ManagerConfigFetcher
+	runnerType          string
+	provider            jobcontext.Provider
+	arcScaleSetResolver ARCScaleSetResolver
+	server              *http.Server
 }
 
 // Config is the process-wide listener configuration. Project manager inputs
@@ -58,6 +59,11 @@ type Config struct {
 	HostManagerClient     jobregistry.ManagerConfigFetcher
 	RunnerType            string
 	Provider              jobcontext.Provider
+	// ARCScaleSetResolver maps a runner-pod peer PID to its ARC scale-set
+	// identity. When nil, the listener uses the single-scale-set fallback
+	// (every job rides one host scope config). Required for per-scale-set
+	// isolation under ProviderGitHubARC; ignored for other providers.
+	ARCScaleSetResolver ARCScaleSetResolver
 }
 
 // New creates a listener bound to cfg.SocketPath.
@@ -66,14 +72,19 @@ func New(cfg Config) *Listener {
 	if logger == nil {
 		logger = slog.Default()
 	}
+	arcScaleSetResolver := cfg.ARCScaleSetResolver
+	if arcScaleSetResolver == nil {
+		arcScaleSetResolver = NewNilARCScaleSetResolver()
+	}
 	l := &Listener{
-		logger:            logger.With("component", "listener"),
-		jobRegistry:       cfg.JobRegistry,
-		socketPath:        cfg.SocketPath,
-		hostManagerConn:   cfg.HostManagerConnection,
-		hostManagerClient: cfg.HostManagerClient,
-		runnerType:        cfg.RunnerType,
-		provider:          cfg.Provider,
+		logger:              logger.With("component", "listener"),
+		jobRegistry:         cfg.JobRegistry,
+		socketPath:          cfg.SocketPath,
+		hostManagerConn:     cfg.HostManagerConnection,
+		hostManagerClient:   cfg.HostManagerClient,
+		runnerType:          cfg.RunnerType,
+		provider:            cfg.Provider,
+		arcScaleSetResolver: arcScaleSetResolver,
 	}
 	mux := http.NewServeMux()
 	switch cfg.Provider {
@@ -84,6 +95,24 @@ func New(cfg Config) *Listener {
 		mux.HandleFunc("POST /v1/github/project/start", l.handleGitHubProjectStart)
 		mux.HandleFunc("POST /v1/github/project/result", l.handleGitHubProjectResult)
 		mux.HandleFunc("POST /v1/github/staging/put", l.handleGitHubStagingPut)
+	case jobcontext.ProviderGitHubARC:
+		// ARC mounts the same /v1/github/* paths so the actions/runner
+		// hook scripts inside each runner pod do not need to know which
+		// runner environment they are in. The single ARC-specific route
+		// is host/start, which has to resolve the runner pod's scale-set
+		// before dispatching to the generic GitHub host-start logic.
+		// staging/put is intentionally not mounted: the host-side Docker
+		// proxy does not run on Kubernetes nodes — dockerd lives inside
+		// each runner pod's dind sidecar and its containers are
+		// descendants of the runner pod cgroup, so existing cgroup_mkdir
+		// tracking already covers them.
+		mux.HandleFunc("POST /v1/github/host/start", l.handleGitHubARCHostStart)
+		mux.HandleFunc("POST /v1/github/host/end", l.handleGitHubHostEnd)
+		mux.HandleFunc("POST /v1/github/job/health", l.handleGitHubJobHealth)
+		mux.HandleFunc("POST /v1/github/project/start", l.handleGitHubProjectStart)
+		mux.HandleFunc("POST /v1/github/project/result", l.handleGitHubProjectResult)
+		// TODO(arc-phase-2): sibling job-pod tracking for
+		// containerMode: kubernetes (see designs/arc-support.md §9).
 	case jobcontext.ProviderGitLab:
 		mux.HandleFunc("POST /v1/gitlab/host/start", l.handleGitLabHostStart)
 		mux.HandleFunc("POST /v1/gitlab/staging/put", l.handleGitLabStagingPut)

@@ -106,10 +106,21 @@ func (jr *JobRegistry) buildHostScopeFromManagerConfig(ctx context.Context, iden
 }
 
 func (jr *JobRegistry) fetchManagerConfig(ctx context.Context, identity jobcontext.JobIdentity, metadata jobcontext.JobMetadata, runnerType string, managerClient ManagerConfigFetcher, eventName string) (jobscope.ManagerConfig, error) {
-	result, err := managerClient.FetchConfig(ctx, &managerv1beta1.FetchConfigRequest{
+	req := &managerv1beta1.FetchConfigRequest{
 		RunnerType:  runnerType,
 		JobIdentity: protoconv.ToProtoJobIdentity(identity),
-	})
+	}
+	// ARC scale-set propagation: if the listener resolved the request's
+	// owning scale-set, scope the manager-config fetch to that scale-set
+	// so the manager can return per-scale-set rules and outputs. The zero
+	// ARCScaleSet from non-ARC providers leaves ArcScaleSet unset.
+	if s := jobcontext.ARCScaleSetFromContext(ctx); !s.IsZero() {
+		req.ArcScaleSet = &managerv1beta1.ARCScaleSet{
+			Namespace: s.Namespace,
+			Name:      s.Name,
+		}
+	}
+	result, err := managerClient.FetchConfig(ctx, req)
 	if err != nil {
 		return jobscope.ManagerConfig{}, fmt.Errorf("manager config fetch: %w", err)
 	}

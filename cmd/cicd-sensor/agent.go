@@ -8,10 +8,13 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/cicd-sensor/cicd-sensor/internal/agent"
+	"github.com/cicd-sensor/cicd-sensor/internal/agent/arcscaleset"
+	"github.com/cicd-sensor/cicd-sensor/internal/agent/k8sclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/listener"
 	"github.com/cicd-sensor/cicd-sensor/internal/agent/managerclient"
 	"github.com/cicd-sensor/cicd-sensor/internal/jobcontext"
@@ -31,6 +34,21 @@ type agentStartOptions struct {
 	ManagerToken  string
 	SocketPath    string
 	ShutdownGrace time.Duration
+
+	// ARC carries options consumed only by Provider == "github-arc". The
+	// zero value is correct for every other provider.
+	ARC arcStartOptions
+}
+
+// arcStartOptions groups the github-arc-specific configuration. It is
+// nested under agentStartOptions so the provider-specific surface stays
+// out of the universal options namespace; future runner environments add
+// their own grouped struct rather than flat fields here.
+type arcStartOptions struct {
+	// Namespaces is the list of Kubernetes namespaces hosting
+	// AutoscalingRunnerSet resources whose runner pods this Agent should
+	// classify by scale-set identity.
+	Namespaces []string
 }
 
 func runAgentSubcommand(args []string) {
@@ -80,6 +98,8 @@ func runAgentStart(args []string) {
 	fs.StringVar(&managerURL, "manager-url", "", "Host scope manager URL.")
 	fs.StringVar(&managerTokenFilePath, "manager-token-file", "", "Path to a file containing the host scope manager bearer token. Overrides CICD_SENSOR_MANAGER_TOKEN.")
 	fs.DurationVar(&shutdownGrace, "shutdown-grace", 8*time.Second, "Best-effort drain window used after SIGTERM.")
+	var arcNamespacesRaw string
+	fs.StringVar(&arcNamespacesRaw, "arc-namespaces", "", "Comma-separated Kubernetes namespaces hosting AutoscalingRunnerSet resources. Required when --provider=github-arc.")
 	if err := fs.Parse(args[1:]); err != nil {
 		os.Exit(2)
 	}
@@ -100,6 +120,9 @@ func runAgentStart(args []string) {
 		ManagerURL:    managerURL,
 		SocketPath:    socketPath,
 		ShutdownGrace: shutdownGrace,
+		ARC: arcStartOptions{
+			Namespaces: parseARCNamespaces(arcNamespacesRaw),
+		},
 	}
 	if err := validateAgentStartRequiredOptions(opts); err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -140,6 +163,12 @@ func runAgentStart(args []string) {
 
 	a := agent.NewAgent(logger, opts.SocketPath, jobcontext.Provider(opts.Provider), opts.Runner, hostManager, hostManagerClient)
 	a.SetShutdownGrace(opts.ShutdownGrace)
+
+	if err := configureProvider(ctx, a, opts, logger); err != nil {
+		slog.ErrorContext(ctx, "agent_failed", "error", err)
+		os.Exit(1)
+	}
+
 	if err := a.Run(ctx); err != nil {
 		if errors.Is(err, listener.ErrAlreadyRunning) {
 			slog.InfoContext(ctx, "agent_already_running", "socket", opts.SocketPath)
@@ -170,9 +199,9 @@ func validateAgentStartRequiredOptions(opts agentStartOptions) error {
 		return fmt.Errorf("provider is required")
 	}
 	switch opts.Provider {
-	case "github", "gitlab":
+	case "github", "github-arc", "gitlab":
 	default:
-		return fmt.Errorf("provider must be github or gitlab")
+		return fmt.Errorf("provider must be github, github-arc, or gitlab")
 	}
 	if opts.Runner == "" {
 		return fmt.Errorf("runner is required")
@@ -182,9 +211,73 @@ func validateAgentStartRequiredOptions(opts agentStartOptions) error {
 	default:
 		return fmt.Errorf("runner must be machine or kubernetes")
 	}
+	if opts.Provider == "github-arc" && opts.Runner != "kubernetes" {
+		return fmt.Errorf("provider github-arc requires --runner=kubernetes")
+	}
+	if opts.Provider == "github-arc" && len(opts.ARC.Namespaces) == 0 {
+		return fmt.Errorf("provider github-arc requires --arc-namespaces with at least one namespace")
+	}
 	if opts.ShutdownGrace <= 0 {
 		return fmt.Errorf("shutdown-grace must be positive")
 	}
+	return nil
+}
+
+// parseARCNamespaces splits a comma-separated value and drops empty entries.
+func parseARCNamespaces(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	out := parts[:0]
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// configureProvider applies provider-specific Agent configuration. It
+// dispatches on the provider name and delegates to a provider-named
+// helper; non-provider-specific setup (shutdown grace, manager client)
+// stays in runAgentStart so the dispatch surface is small and adding a
+// future provider variant follows the same shape.
+func configureProvider(ctx context.Context, a *agent.Agent, opts agentStartOptions, logger *slog.Logger) error {
+	switch opts.Provider {
+	case "github-arc":
+		return configureARC(ctx, a, opts.ARC, logger)
+	}
+	return nil
+}
+
+// configureARC wires the in-cluster Kubernetes client, the per-pod label
+// cache, and the scale-set resolver. The cache's background refresh
+// goroutine is started here so its lifetime is tied to the agent run's
+// context; it returns when ctx is canceled.
+func configureARC(ctx context.Context, a *agent.Agent, opts arcStartOptions, logger *slog.Logger) error {
+	k8sCfg, err := k8sclient.InClusterConfig()
+	if err != nil {
+		return fmt.Errorf("load in-cluster config: %w", err)
+	}
+	client, err := k8sclient.New(k8sCfg)
+	if err != nil {
+		return fmt.Errorf("build k8s client: %w", err)
+	}
+	cache, err := arcscaleset.NewCache(logger, client, opts.Namespaces)
+	if err != nil {
+		return fmt.Errorf("build scale-set cache: %w", err)
+	}
+	resolver, err := arcscaleset.NewResolver(logger, cache)
+	if err != nil {
+		return fmt.Errorf("build scale-set resolver: %w", err)
+	}
+	a.SetARCScaleSetResolver(resolver)
+	go cache.Run(ctx)
+	logger.InfoContext(ctx, "arc_scale_set_resolver_enabled",
+		"namespaces", opts.Namespaces,
+	)
 	return nil
 }
 

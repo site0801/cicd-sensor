@@ -30,6 +30,34 @@ func TestValidateAgentStartRequiredOptions(t *testing.T) {
 			},
 		},
 		{
+			name: "github-arc kubernetes",
+			opts: agentStartOptions{
+				Provider:      "github-arc",
+				Runner:        "kubernetes",
+				ShutdownGrace: time.Second,
+				ARC:           arcStartOptions{Namespaces: []string{"arc-runners"}},
+			},
+		},
+		{
+			name: "github-arc rejects non-kubernetes runner",
+			opts: agentStartOptions{
+				Provider:      "github-arc",
+				Runner:        "machine",
+				ShutdownGrace: time.Second,
+				ARC:           arcStartOptions{Namespaces: []string{"arc-runners"}},
+			},
+			wantErrText: "provider github-arc requires --runner=kubernetes",
+		},
+		{
+			name: "github-arc requires arc-namespaces",
+			opts: agentStartOptions{
+				Provider:      "github-arc",
+				Runner:        "kubernetes",
+				ShutdownGrace: time.Second,
+			},
+			wantErrText: "provider github-arc requires --arc-namespaces",
+		},
+		{
 			name:        "missing provider",
 			opts:        withAgentProvider(valid, ""),
 			wantErrText: "provider is required",
@@ -37,7 +65,7 @@ func TestValidateAgentStartRequiredOptions(t *testing.T) {
 		{
 			name:        "unsupported provider",
 			opts:        withAgentProvider(valid, "circle"),
-			wantErrText: "provider must be github or gitlab",
+			wantErrText: "provider must be github, github-arc, or gitlab",
 		},
 		{
 			name:        "missing runner",

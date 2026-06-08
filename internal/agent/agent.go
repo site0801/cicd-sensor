@@ -15,18 +15,19 @@ import (
 
 // Agent wires the host listener, job registry, and kernel tracker.
 type Agent struct {
-	logger            *slog.Logger
-	hostManagerConn   managerclient.Connection
-	hostManagerClient *managerclient.ConfigClient
-	provider          jobcontext.Provider
-	runnerType        string
-	jobRegistry       *jobregistry.JobRegistry
-	kernelTracker     *kerneltracker.KernelTracker
-	socketPath        string
-	shutdownGrace     time.Duration
-	reaperCancel      context.CancelFunc
-	cancelEngine      context.CancelFunc
-	engineDone        <-chan error
+	logger              *slog.Logger
+	hostManagerConn     managerclient.Connection
+	hostManagerClient   *managerclient.ConfigClient
+	provider            jobcontext.Provider
+	runnerType          string
+	arcScaleSetResolver listener.ARCScaleSetResolver
+	jobRegistry         *jobregistry.JobRegistry
+	kernelTracker       *kerneltracker.KernelTracker
+	socketPath          string
+	shutdownGrace       time.Duration
+	reaperCancel        context.CancelFunc
+	cancelEngine        context.CancelFunc
+	engineDone          <-chan error
 }
 
 const defaultAgentShutdownGrace = 8 * time.Second
@@ -55,6 +56,15 @@ func (a *Agent) SetShutdownGrace(grace time.Duration) {
 	}
 }
 
+// SetARCScaleSetResolver installs an ARC scale-set resolver. When set,
+// every /v1/github/host/start request looks up its peer's scale-set
+// identity before fetching host scope configuration so per-scale-set
+// isolation reaches the manager-config request. Non-ARC deployments leave
+// this nil and the listener falls back to single-scale-set mode.
+func (a *Agent) SetARCScaleSetResolver(resolver listener.ARCScaleSetResolver) {
+	a.arcScaleSetResolver = resolver
+}
+
 // Run starts the listener and TTL finalizer, then blocks until ctx is canceled.
 // On shutdown it finalizes all remaining jobs.
 func (a *Agent) Run(ctx context.Context) error {
@@ -79,6 +89,7 @@ func (a *Agent) Run(ctx context.Context) error {
 		HostManagerClient:     hostManagerClient,
 		RunnerType:            a.runnerType,
 		Provider:              a.provider,
+		ARCScaleSetResolver:   a.arcScaleSetResolver,
 	})
 
 	// Expose subsystems used by shutdown.
