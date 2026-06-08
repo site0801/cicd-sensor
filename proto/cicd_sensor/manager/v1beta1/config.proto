@@ -29,6 +29,22 @@ message RequestedOutputs {
   bool runtime_event = 3;
 }
 
+// ARCScaleSet identifies one Actions Runner Controller
+// `gha-runner-scale-set` release. It mirrors the two labels the ARC
+// controller writes onto every runner pod
+// (actions.github.com/scale-set-namespace and
+// actions.github.com/scale-set-name) and lets the manager return
+// per-scale-set host scope config so different scale-sets on the same
+// cluster can carry different rules and outputs.
+//
+// Empty (zero) ARCScaleSet means single-scale-set: every job on the agent
+// shares one host scope configuration. Non-ARC runner environments always
+// send the zero value.
+message ARCScaleSet {
+  string namespace = 1;
+  string name = 2;
+}
+
 // FetchConfigRequest is the FetchConfig input. Auth is carried in headers,
 // not in the body.
 message FetchConfigRequest {
@@ -38,6 +54,9 @@ message FetchConfigRequest {
   string runner_type = 1;
   JobIdentity job_identity = 2;
   RequestedOutputs requested_outputs = 3;
+  // ARC scale-set identity for per-scale-set host scope isolation.
+  // Optional; the zero value selects single-scale-set config.
+  ARCScaleSet arc_scale_set = 4;
 }
 
 // ServedConfig is the non-rule config portion returned to the agent.
