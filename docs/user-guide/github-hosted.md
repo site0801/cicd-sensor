@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: cicd-sensor/cicd-sensor-action@10fa5e7d8bf293cb679c9859f67d745c17cfc70f # v0.0.32
+      - uses: cicd-sensor/cicd-sensor-action@3a3a447ad3668a3e205bf1273f2f2806bbbd30f3 # v0.0.33
 ```
 
 This action targets Linux GitHub-hosted VM runners.
@@ -43,13 +43,7 @@ Blacksmith Ubuntu 24.04 runners (kernel `6.5.13`, as of 2026-06) are supported f
 
 Earlier versions failed to start on Blacksmith because they attached `fentry/security_socket_connect`, which is not fentry-attachable on Blacksmith's kernel. `v0.0.38` observes AF_UNIX connects through `fentry/unix_stream_connect` and `fentry/unix_dgram_connect` instead, both of which are available there.
 
-If you pin an action release whose default agent predates `v0.0.38`, set the agent version explicitly:
-
-```yaml
-- uses: cicd-sensor/cicd-sensor-action@10fa5e7d8bf293cb679c9859f67d745c17cfc70f # v0.0.32
-  with:
-    cicd-sensor-version: v0.0.38
-```
+Action `v0.0.33` and later default to a compatible agent, so no extra configuration is needed. On older action releases, set `cicd-sensor-version: v0.0.38` explicitly.
 
 ## Standalone mode
 
@@ -148,7 +142,7 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: cicd-sensor/cicd-sensor-action@10fa5e7d8bf293cb679c9859f67d745c17cfc70f # v0.0.32
+      - uses: cicd-sensor/cicd-sensor-action@3a3a447ad3668a3e205bf1273f2f2806bbbd30f3 # v0.0.33
         with:
           manager-url: https://cicd-sensor-manager.example.com
           manager-token: ${{ secrets.CICD_SENSOR_MANAGER_TOKEN }}
